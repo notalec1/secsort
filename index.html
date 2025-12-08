@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Human Number Line</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --surface: #ffffff;
+            --bg: #f3f4f6;
+            --text: #1f2937;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 { margin-top: 0; color: var(--primary); }
+        p { line-height: 1.5; color: #4b5563; }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+        button.secondary { background-color: #9ca3af; }
+        button.danger { background-color: #ef4444; }
+
+        .player-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .player-item {
+            background: #f9fafb;
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .remove-btn {
+            background: #fee2e2;
+            color: #ef4444;
+            width: auto;
+            padding: 4px 8px;
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .secret-number {
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+
+        .hidden { display: none; }
+        
+        .share-link {
+            font-size: 0.9rem;
+            color: var(--primary);
+            text-decoration: underline;
+            cursor: pointer;
+            word-break: break-all;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="app">
+        <!-- Loading State -->
+        <div id="loading">Loading...</div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">Copied to clipboard!</div>
+
+    <script>
+        // --- GAME LOGIC ---
+
+        const app = document.getElementById('app');
+        
+        // UTILS
+        const getParams = () => new URLSearchParams(window.location.search);
+        const showToast = (msg) => {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 2000);
+        };
+
+        // STATE
+        let players = [];
+        let gameActive = false;
+
+        // --- VIEWS ---
+
+        // 1. SETUP VIEW (Host adds names)
+        function renderSetup() {
+            app.innerHTML = `
+                <h1>The Human Number Line</h1>
+                <p>Add everyone who is playing. Each person will get a random number between 1-200.</p>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="nameInput" placeholder="Enter player name (e.g. Dad)" onkeydown="if(event.key==='Enter') addPlayer()">
+                    <button style="width:auto;" onclick="addPlayer()">Add</button>
+                </div>
+                <ul class="player-list" id="playerList"></ul>
+                <button onclick="startGame()" ${players.length < 2 ? 'disabled style="opacity:0.5"' : ''}>Generate Numbers & Start</button>
+            `;
+            renderPlayerList();
+        }
+
+        function renderPlayerList() {
+            const list = document.getElementById('playerList');
+            if(!list) return;
+            list.innerHTML = players.map((p, i) => `
+                <li class="player-item">
+                    <span>${p.name}</span>
+                    <button class="remove-btn" onclick="removePlayer(${i})">✕</button>
+                </li>
+            `).join('');
+        }
+
+        function addPlayer() {
+            const input = document.getElementById('nameInput');
+            const name = input.value.trim();
+            if (name) {
+                players.push({ name, number: null });
+                input.value = '';
+                renderSetup();
+                input.focus();
+            }
+        }
+
+        function removePlayer(index) {
+            players.splice(index, 1);
+            renderSetup();
+        }
+
+        // 2. HOST DASHBOARD (Share links phase)
+        function startGame() {
+            // Generate unique numbers
+            const usedNumbers = new Set();
+            players.forEach(p => {
+                let num;
+                do {
+                    num = Math.floor(Math.random() * 200) + 1;
+                } while (usedNumbers.has(num));
+                usedNumbers.add(num);
+                p.number = num;
+            });
+
+            renderHostDashboard();
+        }
+
+        function renderHostDashboard() {
+            const baseUrl = window.location.href.split('?')[0];
+            
+            app.innerHTML = `
+                <h1>Game Hosted!</h1>
+                <p>Send these links to the players, or verify the order when ready.</p>
+                <ul class="player-list" style="text-align:left;">
+                    ${players.map(p => {
+                        // Create a secure-ish link containing the name and number
+                        const data = btoa(JSON.stringify({ n: p.name, v: p.number }));
+                        const link = `${baseUrl}?d=${data}`;
+                        return `
+                        <li class="player-item" style="flex-direction:column; align-items:flex-start;">
+                            <strong>${p.name}</strong>
+                            <div style="font-size:12px; color:#666; margin-top:4px; width:100%; display:flex; gap:5px;">
+                                <button style="flex:1; padding:5px;" onclick="navigator.clipboard.writeText('${link}'); showToast('Link copied for ${p.name}')">Copy Link</button>
+                                <button class="secondary" style="flex:1; padding:5px;" onclick="window.open('${link}', '_blank')">Open</button>
+                            </div>
+                        </li>
+                        `;
+                    }).join('')}
+                </ul>
+                <button class="danger" onclick="revealAnswers()">Reveal Correct Order</button>
+                <button class="secondary" onclick="if(confirm('Restart?')) location.reload()">Reset Game</button>
+            `;
+        }
+
+        // 3. PLAYER VIEW (What they see when they open a link)
+        function renderPlayerCard(name, number) {
+            app.innerHTML = `
+                <p style="font-size:1.2rem; margin-bottom:0;">Hello, <strong>${name}</strong>!</p>
+                <p>Your hidden number is...</p>
+                <div class="secret-number">${number}</div>
+                <p style="font-size:0.9rem; background:#eef2ff; padding:10px; border-radius:8px;">
+                    <strong>Instructions:</strong><br>
+                    Rank yourselves from smallest to biggest.<br>
+                    <em>Do not say this number out loud!</em><br>
+                    Give hints like: "I am definitely bigger than 50" or "I think I'm smaller than Mom".
+                </p>
+            `;
+        }
+
+        // 4. REVEAL SCREEN (Host view at end)
+        function revealAnswers() {
+            // Sort players by number
+            const sorted = [...players].sort((a, b) => a.number - b.number);
+            
+            app.innerHTML = `
+                <h1>The Correct Order</h1>
+                <ul class="player-list">
+                    ${sorted.map((p, i) => `
+                        <li class="player-item" style="font-size:1.2rem;">
+                            <span><span style="color:#999; margin-right:10px;">#${i+1}</span> ${p.name}</span>
+                            <strong style="color:var(--primary); font-size:1.5rem;">${p.number}</strong>
+                        </li>
+                    `).join('')}
+                </ul>
+                <button onclick="location.reload()">Play Again</button>
+            `;
+        }
+
+        // --- INITIALIZATION ---
+
+        function init() {
+            const params = getParams();
+            const data = params.get('d');
+
+            if (data) {
+                // We are in PLAYER MODE
+                try {
+                    const decoded = JSON.parse(atob(data));
+                    renderPlayerCard(decoded.n, decoded.v);
+                } catch (e) {
+                    app.innerHTML = `<h1>Error</h1><p>Invalid game link.</p><button onclick="window.location.href = window.location.href.split('?')[0]">Go Home</button>`;
+                }
+            } else {
+                // We are in HOST MODE
+                renderSetup();
+            }
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
