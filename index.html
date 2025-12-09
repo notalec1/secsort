@@ -4,98 +4,238 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Line Up!</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         :root {
-            /* Light Mode */
-            --primary: #6366f1; --primary-dark: #4f46e5;
-            --success: #10b981; --success-bg: #ecfdf5;
-            --danger: #ef4444; --danger-bg: #fef2f2;
-            --gold: #f59e0b; --gold-bg: #fef3c7;
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --card-bg: rgba(255, 255, 255, 0.95);
-            --item-bg: #ffffff; --item-border: #e5e7eb;
-            --text-main: #1f2937; --text-sub: #6b7280;
-            --input-bg: #ffffff; --radius: 16px;
-            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
-            --modal-bg: #ffffff;
+            /* Colors */
+            --primary: #6366f1; 
+            --primary-dark: #4f46e5;
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --gold: #f59e0b;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-item: rgba(255, 255, 255, 0.6);
+            --border: rgba(255, 255, 255, 0.6);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --radius: 24px;
         }
 
         @media (prefers-color-scheme: dark) {
             :root {
-                /* Dark Mode */
-                --primary: #818cf8; --primary-dark: #6366f1;
-                --success: #34d399; --success-bg: rgba(16, 185, 129, 0.2);
-                --danger: #f87171; --danger-bg: rgba(239, 68, 68, 0.2);
-                --gold: #fbbf24; --gold-bg: rgba(245, 158, 11, 0.2);
-                --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-                --card-bg: rgba(30, 41, 59, 0.95);
-                --item-bg: #334155; --item-border: #475569;
-                --text-main: #f1f5f9; --text-sub: #94a3b8;
-                --input-bg: #1e293b; --modal-bg: #1e293b;
+                --text-main: #f8fafc;
+                --text-sub: #94a3b8;
+                --bg-card: rgba(30, 41, 59, 0.75);
+                --bg-item: rgba(15, 23, 42, 0.4);
+                --border: rgba(255, 255, 255, 0.1);
+                --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             }
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Nunito', sans-serif; background: var(--bg-gradient); margin: 0; padding: 20px; min-height: 100vh; display: flex; justify-content: center; align-items: center; color: var(--text-main); }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            margin: 0; padding: 20px;
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            color: var(--text-main);
+            /* Animated Background */
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- APP CONTAINER --- */
+        .app-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            width: 100%; max-width: 500px;
+            padding: 2.5rem 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            position: relative;
+            z-index: 1;
+            /* Smooth height resizing */
+            transition: height 0.3s ease;
+            view-transition-name: app-card;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 { margin: 0 0 10px 0; color: var(--primary); font-weight: 900; text-align: center; font-size: 2.2rem; letter-spacing: -1px; }
+        h2 { margin: 0 0 15px 0; font-size: 1.6rem; text-align: center; font-weight: 800; }
+        p { margin: 0 0 25px 0; color: var(--text-sub); text-align: center; line-height: 1.6; font-size: 1.05rem; }
         
-        .app-card { background: var(--card-bg); width: 100%; max-width: 500px; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow); backdrop-filter: blur(10px); animation: slideUp 0.4s ease-out; position: relative; z-index: 1; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .label { 
+            display: block; font-size: 0.8rem; font-weight: 800; 
+            color: var(--text-sub); margin-bottom: 8px; 
+            text-transform: uppercase; letter-spacing: 1px; 
+        }
 
-        h1 { margin: 0 0 10px 0; color: var(--primary); font-weight: 900; text-align: center; font-size: 2rem; }
-        h2 { margin: 0 0 15px 0; font-size: 1.5rem; text-align: center; }
-        p { margin: 0 0 20px 0; color: var(--text-sub); text-align: center; line-height: 1.6; }
-        .label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .row { display: flex; gap: 10px; }
+        /* --- INPUTS & CONTROLS --- */
+        .row { display: flex; gap: 12px; }
         .col { flex: 1; }
-        input, select { width: 100%; padding: 14px; border: 2px solid var(--item-border); border-radius: 12px; font-size: 1rem; font-family: inherit; font-weight: 600; transition: all 0.2s; background: var(--input-bg); color: var(--text-main); }
-        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
 
-        button { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 800; font-family: inherit; cursor: pointer; transition: transform 0.1s, opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        button:active { transform: scale(0.98); }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-primary:disabled { background: var(--text-sub); opacity: 0.5; box-shadow: none; cursor: not-allowed; }
-        .btn-secondary { background: var(--item-bg); color: var(--text-main); border: 1px solid var(--item-border); }
-        .btn-secondary:hover { filter: brightness(0.95); }
-        .btn-danger { background: var(--danger-bg); color: var(--danger); }
+        input, select {
+            width: 100%; padding: 16px;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            font-size: 1rem; font-family: inherit; font-weight: 700;
+            background: var(--bg-item); color: var(--text-main);
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        input:focus, select:focus {
+            outline: none; background: var(--bg-card);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* --- BUTTONS --- */
+        button {
+            width: 100%; padding: 16px; border: none;
+            border-radius: 18px; font-size: 1rem; font-weight: 800;
+            font-family: inherit; cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            position: relative; overflow: hidden;
+        }
+
+        button:active { transform: scale(0.95); }
+        
+        .btn-primary { 
+            background: var(--primary); color: white; 
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); 
+        }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-primary:disabled { background: var(--text-sub); opacity: 0.5; box-shadow: none; cursor: not-allowed; transform: none; }
+
+        .btn-secondary { 
+            background: var(--bg-item); color: var(--text-main); 
+            border: 1px solid var(--border); 
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+
         .btn-icon { width: 44px; padding: 0; font-size: 1.2rem; flex-shrink: 0; }
-        .btn-sm { padding: 10px 12px; font-size: 0.9rem; width: auto; }
+        .btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; border-radius: 12px; }
+        .top-corner-btn { position: absolute; top: 20px; right: 20px; z-index: 10; }
 
-        .list-wrap { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; max-height: 400px; overflow-y: auto; }
-        .item-card { background: var(--item-bg); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--item-border); display: flex; align-items: center; justify-content: space-between; }
-        .item-card.correct { background: var(--success-bg); border-color: var(--success); }
-        .item-card.wrong { background: var(--danger-bg); border-color: var(--danger); }
-        .item-card.gold { background: var(--gold-bg); border-color: var(--gold); }
-        
-        .rank-badge { background: var(--text-main); color: var(--item-bg); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; margin-right: 10px; }
+        /* --- LIST ITEMS --- */
+        .list-wrap { 
+            display: flex; flex-direction: column; gap: 12px; 
+            margin: 25px 0; max-height: 400px; overflow-y: auto; 
+            padding-right: 4px; /* Space for scrollbar */
+        }
 
-        /* TIMER & SCOREBOARD */
-        .timer-badge { background: var(--text-main); color: var(--item-bg); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-family: monospace; font-size: 1.1rem; display: inline-block; margin-bottom: 10px; }
+        .item-card {
+            background: var(--bg-item); padding: 14px 18px;
+            border-radius: 16px; border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.2s ease;
+            animation: fadeIn 0.3s ease-out backwards;
+        }
         
-        .secret-container { position: relative; margin: 30px 0; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
-        .secret-blur { filter: blur(20px); opacity: 0.3; transition: all 0.2s ease; }
-        .secret-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--text-main); color: var(--item-bg); padding: 10px 20px; border-radius: 30px; font-size: 1rem; font-weight: bold; pointer-events: none; transition: opacity 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); white-space: nowrap; }
-        .secret-container.revealed .secret-blur { filter: blur(0); opacity: 1; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .item-card:hover { transform: translateX(2px); }
+        .item-card.correct { background: rgba(16, 185, 129, 0.15); border-color: var(--success); }
+        .item-card.wrong { background: rgba(239, 68, 68, 0.15); border-color: var(--danger); }
+        .item-card.gold { background: rgba(245, 158, 11, 0.15); border-color: var(--gold); }
+        
+        .rank-badge {
+            background: var(--text-main); color: var(--bg-card);
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: bold; margin-right: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- TIMER --- */
+        .timer-badge { 
+            background: var(--text-main); color: var(--bg-card); 
+            padding: 6px 16px; border-radius: 50px; 
+            font-weight: 800; font-family: monospace; font-size: 1.2rem; 
+            display: inline-block; margin-bottom: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* --- SECRET REVEAL --- */
+        .secret-container { 
+            position: relative; margin: 30px 0; cursor: pointer; 
+            height: 140px; display: flex; align-items: center; justify-content: center;
+            background: var(--bg-item); border-radius: 24px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+        }
+
+        .secret-container:active { transform: scale(0.96); }
+
+        .secret-blur { filter: blur(25px); opacity: 0.4; transition: all 0.3s ease; }
+        .secret-overlay { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: var(--text-main); color: var(--bg-card); 
+            padding: 12px 24px; border-radius: 50px; 
+            font-size: 0.9rem; font-weight: 800; letter-spacing: 1px;
+            pointer-events: none; transition: opacity 0.2s; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); white-space: nowrap; 
+        }
+        
+        .secret-container.revealed .secret-blur { filter: blur(0); opacity: 1; transform: scale(1.1); }
         .secret-container.revealed .secret-overlay { opacity: 0; }
-        .big-number { font-size: 6rem; font-weight: 900; color: var(--primary); text-align: center; line-height: 1; }
+        .big-number { font-size: 5rem; font-weight: 900; color: var(--primary); line-height: 1; }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        /* --- MODAL --- */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); 
+            z-index: 100; display: flex; justify-content: center; align-items: center; 
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; 
+        }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
-        .modal-content { background: var(--modal-bg); padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s; border: 1px solid var(--item-border); }
+        .modal-content { 
+            background: var(--bg-card); padding: 30px; border-radius: 24px; 
+            text-align: center; width: 90%; max-width: 320px; 
+            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
         .modal-overlay.active .modal-content { transform: scale(1); }
-        #qrDisplay { margin: 20px auto; display: flex; justify-content: center; background: white; padding: 10px; border-radius: 10px; width: fit-content; }
+        #qrDisplay { margin: 20px auto; display: flex; justify-content: center; background: white; padding: 15px; border-radius: 16px; width: fit-content; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        .divider { height: 1px; background: var(--item-border); margin: 20px 0; }
-        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text-main); color: var(--item-bg); padding: 12px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 10px 20px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 1000; }
+        .divider { height: 2px; background: var(--border); margin: 25px 0; border-radius: 2px; }
+        
+        .toast { 
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px); 
+            background: var(--text-main); color: var(--bg-card); 
+            padding: 14px 28px; border-radius: 50px; 
+            font-weight: 700; font-size: 0.95rem; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            z-index: 1000; 
+        }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         
-        /* Top Right Button */
-        .top-corner-btn { position: absolute; top: 20px; right: 20px; width: auto; padding: 8px 12px; font-size: 0.8rem; z-index: 10; }
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-sub); border-radius: 10px; opacity: 0.2; }
     </style>
 </head>
 <body>
@@ -127,7 +267,6 @@
         };
         let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
         let timerInterval = null;
-
         const app = document.getElementById('app');
 
         // --- PERSISTENCE ---
@@ -137,9 +276,7 @@
             if (saved) {
                 try { 
                     state = JSON.parse(saved); 
-                    if((state.step === 'DISTRIBUTE' || state.step === 'VERIFY') && state.startTime) {
-                        startTimerTicker();
-                    }
+                    if((state.step === 'DISTRIBUTE' || state.step === 'VERIFY') && state.startTime) startTimerTicker();
                 } catch(e) {}
             }
         }
@@ -158,11 +295,8 @@
             }
         }
 
-        // --- LEADERBOARD LOGIC ---
-        function getLeaderboard() {
-            try { return JSON.parse(localStorage.getItem('lineUpLeaderboard')) || []; } catch(e) { return []; }
-        }
-
+        // --- LEADERBOARD ---
+        function getLeaderboard() { try { return JSON.parse(localStorage.getItem('lineUpLeaderboard')) || []; } catch(e) { return []; } }
         function saveScore(timeInSec) {
             const history = getLeaderboard();
             const date = new Date().toLocaleDateString();
@@ -172,7 +306,7 @@
             localStorage.setItem('lineUpLeaderboard', JSON.stringify(history));
         }
 
-        // --- TIMER LOGIC ---
+        // --- TIMER ---
         function startTimerTicker() {
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
@@ -182,12 +316,7 @@
                 }
             }, 1000);
         }
-
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            return `${m}:${s.toString().padStart(2, '0')}`;
-        }
+        function formatTime(s) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`; }
 
         // --- UTILS ---
         const showToast = (msg) => {
@@ -198,6 +327,28 @@
         const encodeData = (obj) => btoa(JSON.stringify(obj));
         const decodeData = (str) => { try { return JSON.parse(atob(str)); } catch(e) { return null; } };
 
+        // --- RENDERING (With View Transitions) ---
+        function render() {
+            // Use native View Transition if supported for fluid morphing
+            if (document.startViewTransition) {
+                document.startViewTransition(() => renderContent());
+            } else {
+                renderContent();
+            }
+        }
+
+        function renderContent() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('p')) return renderPlayerView(params.get('p'));
+            
+            if (state.step === 'SETUP') renderSetup();
+            else if (state.step === 'DISTRIBUTE') renderDistribute();
+            else if (state.step === 'PASS_PLAY') renderPassPlay();
+            else if (state.step === 'VERIFY') renderVerify();
+            else if (state.step === 'RESULTS') renderResults();
+            else if (state.step === 'LEADERBOARD') renderLeaderboard();
+        }
+
         // --- VIEWS ---
 
         function renderSetup() {
@@ -205,10 +356,12 @@
                 <button class="btn-secondary top-corner-btn" onclick="startPassGame()">📱 Pass Mode</button>
                 <h1>🔢 Line Up!</h1>
                 <p>The party game of hidden numbers.</p>
+                
                 <div class="row">
                     <div class="col"><label class="label">Min</label><input type="number" id="minInput" value="${state.settings.min}"></div>
                     <div class="col"><label class="label">Max</label><input type="number" id="maxInput" value="${state.settings.max}"></div>
                 </div>
+                
                 <div style="margin-top:15px;">
                     <label class="label">Sort Order</label>
                     <select id="orderInput">
@@ -216,28 +369,35 @@
                         <option value="desc" ${state.settings.order === 'desc' ? 'selected' : ''}>Biggest → Smallest</option>
                     </select>
                 </div>
+                
                 <div class="divider"></div>
+                
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label class="label" style="margin:0;">Players (${state.players.length})</label>
                     <div>
-                        <button class="btn-secondary btn-sm" style="width:auto; padding:4px 8px; font-size:0.75rem; margin-right:5px;" onclick="setState('LEADERBOARD')">🏆 Scores</button>
-                        ${state.players.length > 0 ? `<button class="btn-secondary btn-sm" style="width:auto; padding:4px 8px; font-size:0.75rem;" onclick="resetGameData()">Reset</button>` : ''}
+                        <button class="btn-secondary btn-sm" style="margin-right:5px;" onclick="setState('LEADERBOARD')">🏆 Scores</button>
+                        ${state.players.length > 0 ? `<button class="btn-secondary btn-sm" onclick="resetGameData()">Reset</button>` : ''}
                     </div>
                 </div>
+                
                 <div class="row" style="margin-top:10px; margin-bottom:15px;">
-                    <input type="text" id="nameInput" placeholder="Enter name" onkeydown="if(event.key==='Enter') addPlayer()">
+                    <input type="text" id="nameInput" placeholder="Name" onkeydown="if(event.key==='Enter') addPlayer()">
                     <button class="btn-primary" style="width:auto;" onclick="addPlayer()">Add</button>
                 </div>
+                
                 <div class="list-wrap">
-                    ${state.players.length === 0 ? '<div style="text-align:center; opacity:0.5; padding:20px;">No players yet</div>' : ''}
+                    ${state.players.length === 0 ? '<div style="text-align:center; opacity:0.5; padding:20px;">Add players to begin...</div>' : ''}
                     ${state.players.map((p, i) => `
-                        <div class="item-card">
+                        <div class="item-card" style="animation-delay: ${i * 0.05}s">
                             <span style="font-weight:700;">${p.name}</span>
                             <button class="btn-danger btn-icon" style="width:32px; height:32px; font-size:1rem;" onclick="removePlayer(${i})">✕</button>
                         </div>
                     `).join('')}
                 </div>
-                <button class="btn-primary" onclick="startGame()" ${state.players.length < 2 ? 'disabled' : ''}>${state.players.length < 2 ? 'Add Players to Start' : 'Generate Links'}</button>
+                
+                <button class="btn-primary" onclick="startGame()" ${state.players.length < 2 ? 'disabled' : ''}>
+                    ${state.players.length < 2 ? 'Add Players to Start' : 'Generate Links'}
+                </button>
             `;
         }
 
@@ -246,26 +406,23 @@
             const currentSeconds = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
             
             app.innerHTML = `
-                <div style="text-align:center;">
-                    <div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div>
-                </div>
+                <div style="text-align:center;"><div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div></div>
                 <h2>🔗 Send Links</h2>
-                <p>Distribute secret numbers.</p>
+                <p>Distribute numbers to players.</p>
                 <div class="list-wrap">
-                    ${state.players.map(p => {
+                    ${state.players.map((p, i) => {
                         const payload = { n: p.name, v: p.number, min: state.settings.min, max: state.settings.max, o: state.settings.order };
                         const link = `${baseUrl}?p=${encodeData(payload)}`;
                         return `
-                        <div class="item-card" style="flex-direction:column; align-items:stretch; gap:10px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="item-card" style="flex-direction:column; gap:12px; animation-delay: ${i * 0.05}s">
+                            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                                 <span style="font-weight:800;">${p.name}</span>
-                                <span style="font-size:0.75rem; background:var(--primary); color:white; padding:2px 8px; border-radius:10px; font-weight:700;">HIDDEN</span>
+                                <span style="font-size:0.75rem; background:var(--primary); color:white; padding:4px 10px; border-radius:12px; font-weight:800;">HIDDEN</span>
                             </div>
-                            <div class="row" style="gap:8px;">
-                                <button class="btn-secondary btn-icon" onclick="showQr('${link}', '${p.name}')" title="QR Code">🏁</button>
-                                <button class="btn-secondary btn-sm" style="flex:1" onclick="copyLink('${link}')" title="Copy Link">📋 Copy</button>
-                                <button class="btn-secondary btn-icon" onclick="shareLink('${link}', '${p.name}')" title="Share">📤</button>
-                                <button class="btn-secondary btn-icon" onclick="window.open('${link}', '_blank')" title="Open">👁️</button>
+                            <div class="row" style="width:100%; gap:8px;">
+                                <button class="btn-secondary btn-icon" onclick="showQr('${link}', '${p.name}')">🏁</button>
+                                <button class="btn-secondary btn-sm" style="flex:1" onclick="copyLink('${link}')">Copy Link</button>
+                                <button class="btn-secondary btn-icon" onclick="shareLink('${link}', '${p.name}')">📤</button>
                             </div>
                         </div>
                         `;
@@ -285,17 +442,15 @@
             const orderArrow = state.settings.order === 'asc' ? '↗️' : '↘️';
 
             if (!state.viewingNumber) {
-                // Hand-off screen
                 app.innerHTML = `
                     <div style="text-align:center; margin-top:20px;">
-                        <h1 style="font-size:4rem; margin-bottom:20px;">📱</h1>
-                        <h2>Pass device to<br><span style="color:var(--primary); font-size:2rem;">${p.name}</span></h2>
+                        <h1 style="font-size:4rem; margin-bottom:20px; animation: bounce 1s infinite;">📱</h1>
+                        <h2>Pass device to<br><span style="color:var(--primary); font-size:2.5rem;">${p.name}</span></h2>
                         <div class="divider"></div>
-                        <button class="btn-primary" onclick="state.viewingNumber=true; saveState(); renderPassPlay()">I am ${p.name}</button>
+                        <button class="btn-primary" onclick="state.viewingNumber=true; saveState(); render()">I am ${p.name}</button>
                     </div>
                 `;
             } else {
-                // Reveal screen
                 app.innerHTML = `
                     <div style="text-align:center;">
                         <h2>Hi, ${p.name}!</h2>
@@ -305,8 +460,8 @@
                         <div class="secret-overlay">HOLD TO REVEAL</div>
                         <div class="big-number secret-blur">${p.number}</div>
                     </div>
-                    <div style="background:var(--item-bg); padding:15px; border-radius:12px; text-align:left; border:1px solid var(--item-border); font-size:0.9rem; margin-bottom:20px;">
-                        <ul style="padding-left:20px; margin:0; line-height:1.5;">
+                    <div style="background:var(--bg-item); padding:15px; border-radius:16px; text-align:left; font-size:0.95rem; margin-bottom:20px;">
+                        <ul style="padding-left:20px; margin:0; line-height:1.6;">
                             <li>Range: <strong>${state.settings.min} - ${state.settings.max}</strong></li>
                             <li>Order: <strong>${orderText} ${orderArrow}</strong></li>
                         </ul>
@@ -320,26 +475,22 @@
         }
 
         function renderVerify() {
-            // Ensure timer starts if coming from Pass Mode
             if (!state.startTime) state.startTime = Date.now();
-            
             const orderText = state.settings.order === 'asc' ? 'Smallest to Biggest' : 'Biggest to Smallest';
             const currentSeconds = Math.floor((Date.now() - state.startTime) / 1000);
             
             app.innerHTML = `
-                <div style="text-align:center;">
-                    <div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div>
-                </div>
+                <div style="text-align:center;"><div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div></div>
                 <h2>🧐 Verify Order</h2>
                 <p>Goal: <strong>${orderText}</strong></p>
                 <div class="list-wrap">
                     ${state.players.map((p, i) => `
-                        <div class="item-card">
+                        <div class="item-card" style="transition: transform 0.3s ease;">
                             <div style="display:flex; align-items:center;">
                                 <div class="rank-badge">${i + 1}</div>
                                 <span style="font-weight:700;">${p.name}</span>
                             </div>
-                            <div style="display:flex; gap:5px;">
+                            <div style="display:flex; gap:8px;">
                                 <button class="btn-secondary btn-icon" onclick="movePlayer(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
                                 <button class="btn-secondary btn-icon" onclick="movePlayer(${i}, 1)" ${i === state.players.length - 1 ? 'disabled' : ''}>▼</button>
                             </div>
@@ -362,13 +513,13 @@
                 if (!isCorrect) allCorrect = false;
                 const realRank = sorted.findIndex(x => x.name === p.name) + 1;
                 return `
-                    <div class="item-card ${isCorrect ? 'correct' : 'wrong'}">
+                    <div class="item-card ${isCorrect ? 'correct' : 'wrong'}" style="animation-delay: ${i * 0.1}s">
                         <div>
                             <div style="display:flex; align-items:center;">
                                 <div class="rank-badge" style="background:${isCorrect ? 'var(--success)' : 'var(--danger)'}; color:white;">${i+1}</div>
                                 <strong>${p.name}</strong>
                             </div>
-                            <div style="font-size:0.85rem; margin-top:4px; margin-left:34px; opacity:0.8;">
+                            <div style="font-size:0.85rem; margin-top:6px; margin-left:40px; opacity:0.8;">
                                 Number: <strong>${p.number}</strong>
                                 ${!isCorrect ? `(Should be #${realRank})` : ''}
                             </div>
@@ -385,47 +536,44 @@
                     saveScore(duration);
                     state.finalTime = duration; 
                     saveState();
-                    setTimeout(() => confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }), 100);
+                    setTimeout(() => confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } }), 200);
                 }
-                timeMsg = `<div class="timer-badge" style="background:var(--gold); color:white;">Completed in ${formatTime(state.finalTime || duration)}</div>`;
+                timeMsg = `<div class="timer-badge" style="background:var(--gold); color:white; animation: popIn 0.5s;">Completed in ${formatTime(state.finalTime || duration)}</div>`;
             }
 
             app.innerHTML = `
-                ${timeMsg}
+                <div style="text-align:center;">${timeMsg}</div>
                 <h1>${allCorrect ? '🎉 Perfect!' : '😬 So Close!'}</h1>
-                <p>${allCorrect ? 'Correct order!' : 'Incorrect order. Time not saved.'}</p>
+                <p>${allCorrect ? 'Correct order!' : 'Incorrect order.'}</p>
                 <div class="list-wrap">${listHtml}</div>
-                <button class="btn-primary" onclick="restartSamePlayers()">🔄 Play Again (Same Players)</button>
-                <button class="btn-secondary" style="margin-top:10px;" onclick="setState('LEADERBOARD')">🏆 View Leaderboard</button>
-                <button class="btn-secondary" style="margin-top:10px;" onclick="resetGameData()">New Game (Reset All)</button>
+                <button class="btn-primary" onclick="restartSamePlayers()">🔄 Play Again</button>
+                <button class="btn-secondary" style="margin-top:10px;" onclick="setState('LEADERBOARD')">🏆 Leaderboard</button>
+                <button class="btn-secondary" style="margin-top:10px;" onclick="resetGameData()">New Game</button>
             `;
         }
         
         function renderLeaderboard() {
             const scores = getLeaderboard();
-            const playerCount = state.players.length || 0;
-            const relevantScores = scores.filter(s => s.players === playerCount);
-            
-            const list = relevantScores.length ? relevantScores.map((s, i) => `
-                <div class="item-card ${i===0 ? 'gold' : ''}">
+            const count = state.players.length || 0;
+            const relevant = scores.filter(s => s.players === count);
+            const list = relevant.length ? relevant.map((s, i) => `
+                <div class="item-card ${i===0 ? 'gold' : ''}" style="animation-delay: ${i*0.1}s">
                     <div style="display:flex; align-items:center;">
                         <div class="rank-badge" style="${i===0 ? 'background:var(--gold); color:white;' : ''}">#${i+1}</div>
                         <div>
                             <strong>${formatTime(s.time)}</strong>
-                            <div style="font-size:0.8rem; opacity:0.7;">${s.date}</div>
+                            <div style="font-size:0.8rem; opacity:0.6;">${s.date}</div>
                         </div>
                     </div>
-                    <div style="font-size:0.9rem; font-weight:bold;">${s.players} Players</div>
+                    <div style="font-size:0.9rem; font-weight:bold;">${s.players} P</div>
                 </div>
-            `).join('') : `<div style="text-align:center; padding:20px; color:var(--text-sub);">No records for ${playerCount} players yet.</div>`;
+            `).join('') : `<div style="text-align:center; padding:30px; opacity:0.6;">No records for ${count} players.</div>`;
 
             app.innerHTML = `
                 <h1>🏆 Leaderboard</h1>
-                <p>Best times for <strong>${playerCount} players</strong>.</p>
-                <div class="list-wrap">
-                    ${list}
-                </div>
-                <button class="btn-secondary" onclick="setState('SETUP')">Back to Setup</button>
+                <p>Best times for <strong>${count} players</strong>.</p>
+                <div class="list-wrap">${list}</div>
+                <button class="btn-secondary" onclick="setState('SETUP')">Back</button>
             `;
         }
 
@@ -445,19 +593,18 @@
                     <div class="secret-overlay">HOLD TO REVEAL</div>
                     <div class="big-number secret-blur">${data.v}</div>
                 </div>
-                <div style="background:var(--item-bg); padding:20px; border-radius:12px; text-align:left; border:1px solid var(--item-border);">
+                <div style="background:var(--bg-item); padding:20px; border-radius:16px; text-align:left; font-size:0.95rem;">
                     <label class="label" style="color:var(--primary);">Mission</label>
                     <ul style="padding-left:20px; margin:5px 0; line-height:1.6;">
                         <li>Range: <strong>${data.min} - ${data.max}</strong></li>
                         <li>Order: <strong>${orderText} ${orderArrow}</strong></li>
-                        <li>Give hints, but <strong>never</strong> say your number!</li>
                     </ul>
                 </div>
             `;
             bindSecretBox();
         }
 
-        // --- ACTIONS ---
+        // --- CONTROLLER ---
         function addPlayer() {
             const input = document.getElementById('nameInput');
             const name = input.value.trim();
@@ -465,16 +612,14 @@
             if (state.players.find(p => p.name === name)) return showToast("Name taken!");
             state.players.push({ name, number: 0 });
             input.value = '';
-            renderSetup();
+            setState('SETUP');
             setTimeout(() => document.getElementById('nameInput').focus(), 50);
-            saveState();
         }
-        function removePlayer(i) { state.players.splice(i, 1); renderSetup(); saveState(); }
+        function removePlayer(i) { state.players.splice(i, 1); setState('SETUP'); }
         
         function generateNumbers() {
             const min = parseInt(document.getElementById('minInput') ? document.getElementById('minInput').value : state.settings.min);
             const max = parseInt(document.getElementById('maxInput') ? document.getElementById('maxInput').value : state.settings.max);
-            
             if (min >= max) { showToast("Min must be < Max!"); return false; }
             state.settings.min = min; state.settings.max = max; 
             if(document.getElementById('orderInput')) state.settings.order = document.getElementById('orderInput').value;
@@ -500,7 +645,7 @@
             if(!generateNumbers()) return;
             state.passIndex = 0;
             state.viewingNumber = false;
-            state.startTime = null; // Timer starts after passing
+            state.startTime = null;
             setState('PASS_PLAY');
         }
 
@@ -509,34 +654,27 @@
                 state.passIndex++;
                 state.viewingNumber = false;
                 saveState();
-                renderPassPlay();
+                render(); // Trigger view transition
             } else {
-                state.startTime = Date.now(); // Start Timer NOW
+                state.startTime = Date.now();
                 setState('VERIFY');
             }
         }
         
-        function restartSamePlayers() {
-            state.startTime = null; state.finalTime = null;
-            startGame(); 
-        }
+        function restartSamePlayers() { state.startTime = null; state.finalTime = null; startGame(); }
 
         function bindSecretBox() {
             const box = document.getElementById('secretBox');
             if(!box) return;
             const reveal = (e) => { if(e.cancelable) e.preventDefault(); box.classList.add('revealed'); };
             const hide = (e) => { if(e.cancelable) e.preventDefault(); box.classList.remove('revealed'); };
-            box.addEventListener('touchstart', reveal, { passive: false });
-            box.addEventListener('touchend', hide);
-            box.addEventListener('touchcancel', hide);
-            box.addEventListener('mousedown', reveal);
-            box.addEventListener('mouseup', hide);
-            box.addEventListener('mouseleave', hide);
+            ['touchstart','mousedown'].forEach(e => box.addEventListener(e, reveal, {passive:false}));
+            ['touchend','touchcancel','mouseup','mouseleave'].forEach(e => box.addEventListener(e, hide));
         }
 
         function copyLink(url) { navigator.clipboard.writeText(url); showToast("Link copied!"); }
         async function shareLink(url, name) {
-            if (navigator.share) { try { await navigator.share({ title: 'Line Up!', text: `Your secret number for ${name}`, url: url }); } catch (err) {} } else { copyLink(url); }
+            if (navigator.share) { try { await navigator.share({ title: 'Line Up!', text: `Secret number for ${name}`, url: url }); } catch (err) {} } else { copyLink(url); }
         }
 
         function showQr(url, name) {
@@ -553,25 +691,14 @@
             const target = index + dir;
             if (target < 0 || target >= state.players.length) return;
             [state.players[index], state.players[target]] = [state.players[target], state.players[index]];
-            renderVerify();
+            renderVerify(); // Re-render with View Transition
             saveState();
         }
         function checkOrder() { setState('RESULTS'); }
         function setState(s) { state.step = s; saveState(); render(); }
         
-        function render() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('p')) return renderPlayerView(params.get('p'));
-            if (state.step === 'SETUP') renderSetup();
-            else if (state.step === 'DISTRIBUTE') renderDistribute();
-            else if (state.step === 'PASS_PLAY') renderPassPlay();
-            else if (state.step === 'VERIFY') renderVerify();
-            else if (state.step === 'RESULTS') renderResults();
-            else if (state.step === 'LEADERBOARD') renderLeaderboard();
-        }
-
         loadState();
-        render();
+        render(); // Initial Render
     </script>
 </body>
 </html>
