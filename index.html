@@ -155,6 +155,15 @@
         .btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; border-radius: 12px; }
         .btn-icon { width: 44px; padding: 0; font-size: 1.2rem; flex-shrink: 0; }
         
+        /* The Mode Switch Back Button */
+        .top-left-btn { 
+            position: absolute; top: 15px; left: 15px; z-index: 10; 
+            font-size: 1.2rem; background: none; border: none; 
+            cursor: pointer; opacity: 0.4; padding: 5px; width: auto; 
+            transition: opacity 0.2s;
+        }
+        .top-left-btn:hover { opacity: 1; transform: scale(1.1); }
+
         /* Lists */
         .list-wrap { display: flex; flex-direction: column; gap: 12px; margin: 25px 0; max-height: 400px; overflow-y: auto; padding-right: 4px; }
         
@@ -303,6 +312,13 @@
             sessionStorage.setItem('lineUpViewMode', mode);
             if(mode === 'tv') document.body.classList.add('is-tv-mode');
             else document.body.classList.remove('is-tv-mode');
+            render();
+        }
+
+        function resetViewMode() {
+            viewMode = null;
+            sessionStorage.removeItem('lineUpViewMode');
+            document.body.classList.remove('is-tv-mode');
             render();
         }
 
@@ -459,7 +475,6 @@
             const name = prompt("Name this group:");
             if(name) {
                 const presets = JSON.parse(localStorage.getItem('lineUpPresets')) || [];
-                // CHANGE: Save min/max with the group
                 presets.push({ 
                     name, 
                     players: state.players.map(p => ({ name: p.name, number: 0 })),
@@ -475,7 +490,6 @@
             const presets = JSON.parse(localStorage.getItem('lineUpPresets')) || [];
             if(presets[index]) {
                 state.players = JSON.parse(JSON.stringify(presets[index].players));
-                // CHANGE: Load min/max if available
                 if(presets[index].min !== undefined) state.settings.min = presets[index].min;
                 if(presets[index].max !== undefined) state.settings.max = presets[index].max;
                 saveState();
@@ -601,6 +615,7 @@
         }
 
         function renderSetup() {
+            const switchBtn = `<button class="top-left-btn" onclick="resetViewMode()" title="Switch View Mode">↔️</button>`;
             const leftContent = `
                 <h1>Line Up!</h1>
                 <p>The Ultimate Party Game</p>
@@ -651,6 +666,7 @@
             `;
 
             app.innerHTML = `
+                ${switchBtn}
                 <div class="split-container">
                     <div class="left-panel">${leftContent}</div>
                     ${viewMode === 'tv' ? `<div class="right-panel"><h2>Roster</h2>${rightContent}</div>` : `<div style="margin-top:10px">${rightContent}</div>`}
@@ -663,6 +679,7 @@
             const baseUrl = window.location.href.split('?')[0];
             const currentSeconds = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
             const encodeData = (obj) => btoa(JSON.stringify(obj));
+            const switchBtn = `<button class="top-left-btn" onclick="resetViewMode()" title="Switch View Mode">↔️</button>`;
             
             const timerHtml = `<div style="text-align:center;"><div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div></div>`;
             const controlsHtml = `
@@ -695,19 +712,21 @@
                 </div>`;
 
             if (viewMode === 'tv') {
-                app.innerHTML = `<div class="split-container"><div class="left-panel">${controlsHtml}</div><div class="right-panel"><h2>Players</h2>${listHtml}</div></div>`;
+                app.innerHTML = `${switchBtn}<div class="split-container"><div class="left-panel">${controlsHtml}</div><div class="right-panel"><h2>Players</h2>${listHtml}</div></div>`;
             } else {
-                app.innerHTML = `${controlsHtml}${listHtml}`;
+                app.innerHTML = `${switchBtn}${controlsHtml}${listHtml}`;
             }
             startTimerTicker();
         }
 
         function renderPassPlay() {
-            // Pass Play is inherently mobile/single screen, so we don't split this layout
             const p = state.players[state.passIndex];
             const orderText = state.settings.order === 'asc' ? 'Smallest ➔ Biggest' : 'Biggest ➔ Smallest';
+            const switchBtn = `<button class="top-left-btn" onclick="resetViewMode()" title="Switch View Mode">↔️</button>`;
+            
             if (!state.viewingNumber) {
                 app.innerHTML = `
+                    ${switchBtn}
                     <div style="text-align:center; margin-top:20px;">
                         <h1 style="font-size:4rem; margin-bottom:20px;">📱</h1>
                         <h2>Pass to<br><span style="color:var(--primary); font-size:2.5rem;">${p.name}</span></h2>
@@ -716,6 +735,7 @@
                     </div>`;
             } else {
                 app.innerHTML = `
+                    ${switchBtn}
                     <div style="text-align:center;"><h2>Hi, ${p.name}!</h2><p>Tap & hold to reveal.</p></div>
                     <div class="secret-container" id="secretBox"><div class="secret-overlay">HOLD</div><div class="big-number secret-blur">${p.number}</div></div>
                     <div style="background:var(--bg-item); padding:15px; border-radius:16px; text-align:left; font-size:0.95rem; margin-bottom:20px;">
@@ -730,6 +750,7 @@
         function renderVerify() {
             if (!state.startTime) state.startTime = Date.now();
             const currentSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+            const switchBtn = `<button class="top-left-btn" onclick="resetViewMode()" title="Switch View Mode">↔️</button>`;
             
             const timerHtml = `<div style="text-align:center;"><div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div></div>`;
             const controlsHtml = `
@@ -766,9 +787,9 @@
             `;
 
             if (viewMode === 'tv') {
-                app.innerHTML = `<div class="split-container"><div class="left-panel">${controlsHtml}</div><div class="right-panel"><h2>Current Order</h2>${listHtml}</div></div>`;
+                app.innerHTML = `${switchBtn}<div class="split-container"><div class="left-panel">${controlsHtml}</div><div class="right-panel"><h2>Current Order</h2>${listHtml}</div></div>`;
             } else {
-                app.innerHTML = `${controlsHtml}${listHtml}`;
+                app.innerHTML = `${switchBtn}${controlsHtml}${listHtml}`;
             }
             startTimerTicker();
         }
@@ -777,6 +798,7 @@
             clearInterval(timerInterval);
             const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
             let allCorrect = true; 
+            const switchBtn = `<button class="top-left-btn" onclick="resetViewMode()" title="Switch View Mode">↔️</button>`;
             
             // MVP Logic
             let mvpName = ""; let bestDelta = Infinity;
@@ -829,12 +851,13 @@
 
             if(viewMode === 'tv') {
                 app.innerHTML = `
+                    ${switchBtn}
                     <div class="split-container">
                         <div class="left-panel" style="justify-content:center;">${headerHtml}<div style="margin-top:30px">${buttonsHtml}</div></div>
                         <div class="right-panel"><h2>Scoreboard</h2>${listHtml}</div>
                     </div>`;
             } else {
-                app.innerHTML = `${headerHtml}${listHtml}${buttonsHtml}`;
+                app.innerHTML = `${switchBtn}${headerHtml}${listHtml}${buttonsHtml}`;
             }
         }
 
@@ -874,7 +897,6 @@
 
         // Start
         initSnow(); loadState(); 
-        // If we are deep in the game (not setup), assume mobile unless previously set
         if(state.step !== 'SETUP' && !viewMode) { viewMode = 'mobile'; }
         if(viewMode === 'tv') document.body.classList.add('is-tv-mode');
         render();
