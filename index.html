@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Line Up!</title>
+    <title>Line Up! Ultimate</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -44,16 +44,26 @@
             min-height: 100vh;
             display: flex; justify-content: center; align-items: center;
             color: var(--text-main);
-            /* Animated Background */
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #4338ca); /* Winter Night Gradient */
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
+            overflow-x: hidden;
         }
+
+        /* TV MODE SCALE */
+        body.tv-mode { zoom: 1.3; }
+        @media (max-width: 600px) { body.tv-mode { zoom: 1; } } /* Disable on mobile */
 
         @keyframes gradientBG {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
+        }
+
+        /* --- SNOW CANVAS --- */
+        #snowCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; opacity: 0.6;
         }
 
         /* --- APP CONTAINER --- */
@@ -68,8 +78,6 @@
             box-shadow: var(--shadow);
             position: relative;
             z-index: 1;
-            /* Smooth height resizing */
-            transition: height 0.3s ease;
             view-transition-name: app-card;
         }
 
@@ -77,12 +85,7 @@
         h1 { margin: 0 0 10px 0; color: var(--primary); font-weight: 900; text-align: center; font-size: 2.2rem; letter-spacing: -1px; }
         h2 { margin: 0 0 15px 0; font-size: 1.6rem; text-align: center; font-weight: 800; }
         p { margin: 0 0 25px 0; color: var(--text-sub); text-align: center; line-height: 1.6; font-size: 1.05rem; }
-        
-        .label { 
-            display: block; font-size: 0.8rem; font-weight: 800; 
-            color: var(--text-sub); margin-bottom: 8px; 
-            text-transform: uppercase; letter-spacing: 1px; 
-        }
+        .label { display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
 
         /* --- INPUTS & CONTROLS --- */
         .row { display: flex; gap: 12px; }
@@ -90,183 +93,180 @@
 
         input, select {
             width: 100%; padding: 16px;
-            border: 2px solid transparent;
-            border-radius: 16px;
+            border: 2px solid transparent; border-radius: 16px;
             font-size: 1rem; font-family: inherit; font-weight: 700;
             background: var(--bg-item); color: var(--text-main);
             transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
-
-        input:focus, select:focus {
-            outline: none; background: var(--bg-card);
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-            transform: translateY(-2px);
-        }
+        input:focus, select:focus { outline: none; background: var(--bg-card); border-color: var(--primary); transform: translateY(-2px); }
 
         /* --- BUTTONS --- */
         button {
-            width: 100%; padding: 16px; border: none;
-            border-radius: 18px; font-size: 1rem; font-weight: 800;
-            font-family: inherit; cursor: pointer;
+            width: 100%; padding: 16px; border: none; border-radius: 18px;
+            font-size: 1rem; font-weight: 800; font-family: inherit; cursor: pointer;
             transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            position: relative; overflow: hidden;
         }
-
         button:active { transform: scale(0.95); }
         
-        .btn-primary { 
-            background: var(--primary); color: white; 
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); 
-        }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
         .btn-primary:disabled { background: var(--text-sub); opacity: 0.5; box-shadow: none; cursor: not-allowed; transform: none; }
 
-        .btn-secondary { 
-            background: var(--bg-item); color: var(--text-main); 
-            border: 1px solid var(--border); 
-        }
+        .btn-secondary { background: var(--bg-item); color: var(--text-main); border: 1px solid var(--border); }
         .btn-secondary:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
 
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
-
         .btn-icon { width: 44px; padding: 0; font-size: 1.2rem; flex-shrink: 0; }
         .btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; border-radius: 12px; }
-
+        
+        /* CORNER BUTTONS */
+        .top-left-btn { position: absolute; top: 20px; left: 20px; z-index: 10; font-size: 1.5rem; background: none; border: none; cursor: pointer; opacity: 0.5; transition: opacity 0.2s; padding: 0; width: auto; }
+        .top-left-btn:hover { opacity: 1; transform: scale(1.1); }
+        
         /* --- LIST ITEMS --- */
-        .list-wrap { 
-            display: flex; flex-direction: column; gap: 12px; 
-            margin: 25px 0; max-height: 400px; overflow-y: auto; 
-            padding-right: 4px; /* Space for scrollbar */
-        }
-
+        .list-wrap { display: flex; flex-direction: column; gap: 12px; margin: 25px 0; max-height: 400px; overflow-y: auto; padding-right: 4px; }
         .item-card {
-            background: var(--bg-item); padding: 14px 18px;
-            border-radius: 16px; border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            transition: all 0.2s ease;
+            background: var(--bg-item); padding: 14px 18px; border-radius: 16px; border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;
             animation: fadeIn 0.3s ease-out backwards;
         }
-        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .item-card:hover { transform: translateX(2px); }
+        
         .item-card.correct { background: rgba(16, 185, 129, 0.15); border-color: var(--success); }
         .item-card.wrong { background: rgba(239, 68, 68, 0.15); border-color: var(--danger); }
         .item-card.gold { background: rgba(245, 158, 11, 0.15); border-color: var(--gold); }
         
-        .rank-badge {
-            background: var(--text-main); color: var(--bg-card);
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.8rem; font-weight: bold; margin-right: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        /* --- TIMER --- */
-        .timer-badge { 
-            background: var(--text-main); color: var(--bg-card); 
-            padding: 6px 16px; border-radius: 50px; 
-            font-weight: 800; font-family: monospace; font-size: 1.2rem; 
-            display: inline-block; margin-bottom: 15px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+        .rank-badge { background: var(--text-main); color: var(--bg-card); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; margin-right: 12px; }
+        .timer-badge { background: var(--text-main); color: var(--bg-card); padding: 6px 16px; border-radius: 50px; font-weight: 800; font-family: monospace; font-size: 1.2rem; display: inline-block; margin-bottom: 15px; }
 
         /* --- SECRET REVEAL --- */
-        .secret-container { 
-            position: relative; margin: 30px 0; cursor: pointer; 
-            height: 140px; display: flex; align-items: center; justify-content: center;
-            background: var(--bg-item); border-radius: 24px;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
-            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
-        }
-
+        .secret-container { position: relative; margin: 30px 0; cursor: pointer; height: 140px; display: flex; align-items: center; justify-content: center; background: var(--bg-item); border-radius: 24px; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); user-select: none; -webkit-user-select: none; }
         .secret-container:active { transform: scale(0.96); }
-
         .secret-blur { filter: blur(25px); opacity: 0.4; transition: all 0.3s ease; }
-        .secret-overlay { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: var(--text-main); color: var(--bg-card); 
-            padding: 12px 24px; border-radius: 50px; 
-            font-size: 0.9rem; font-weight: 800; letter-spacing: 1px;
-            pointer-events: none; transition: opacity 0.2s; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); white-space: nowrap; 
-        }
-        
+        .secret-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--text-main); color: var(--bg-card); padding: 12px 24px; border-radius: 50px; font-size: 0.9rem; font-weight: 800; pointer-events: none; transition: opacity 0.2s; white-space: nowrap; }
         .secret-container.revealed .secret-blur { filter: blur(0); opacity: 1; transform: scale(1.1); }
         .secret-container.revealed .secret-overlay { opacity: 0; }
         .big-number { font-size: 5rem; font-weight: 900; color: var(--primary); line-height: 1; }
 
         /* --- MODAL --- */
-        .modal-overlay { 
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); 
-            z-index: 100; display: flex; justify-content: center; align-items: center; 
-            opacity: 0; pointer-events: none; transition: opacity 0.3s; 
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 100; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
-        .modal-content { 
-            background: var(--bg-card); padding: 30px; border-radius: 24px; 
-            text-align: center; width: 90%; max-width: 320px; 
-            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
-            border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-        }
+        .modal-content { background: var(--bg-card); padding: 30px; border-radius: 24px; text-align: center; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto; }
         .modal-overlay.active .modal-content { transform: scale(1); }
-        #qrDisplay { margin: 20px auto; display: flex; justify-content: center; background: white; padding: 15px; border-radius: 16px; width: fit-content; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-
-        .divider { height: 2px; background: var(--border); margin: 25px 0; border-radius: 2px; }
         
-        .toast { 
-            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px); 
-            background: var(--text-main); color: var(--bg-card); 
-            padding: 14px 28px; border-radius: 50px; 
-            font-weight: 700; font-size: 0.95rem; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-            opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            z-index: 1000; 
-        }
+        #qrDisplay { margin: 20px auto; display: flex; justify-content: center; background: white; padding: 15px; border-radius: 16px; width: fit-content; }
+        .divider { height: 2px; background: var(--border); margin: 25px 0; border-radius: 2px; }
+        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text-main); color: var(--bg-card); padding: 14px 28px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; box-shadow: 0 10px 30px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: all 0.4s; z-index: 1000; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         
-        /* SCROLLBAR */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--text-sub); border-radius: 10px; opacity: 0.2; }
     </style>
 </head>
 <body>
 
+    <canvas id="snowCanvas"></canvas>
+
     <div class="app-card" id="app"></div>
 
-    <!-- QR MODAL -->
-    <div class="modal-overlay" id="qrModal" onclick="closeQr()">
+    <!-- MODALS -->
+    <div class="modal-overlay" id="qrModal" onclick="closeModal('qrModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h2 id="qrName" style="margin-bottom:5px;">Player</h2>
-            <p style="margin-bottom:0; font-size:0.9rem;">Scan to join</p>
             <div id="qrDisplay"></div>
-            <button class="btn-secondary" onclick="closeQr()">Close</button>
+            <button class="btn-secondary" onclick="closeModal('qrModal')">Close</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="presetsModal" onclick="closeModal('presetsModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2>💾 Saved Groups</h2>
+            <div id="presetsList" style="margin:20px 0; text-align:left;"></div>
+            <button class="btn-secondary" onclick="closeModal('presetsModal')">Close</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="historyModal" onclick="closeModal('historyModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2>📜 Game History</h2>
+            <div id="historyList" style="margin:20px 0; text-align:left;"></div>
+            <button class="btn-secondary" onclick="closeModal('historyModal')">Close</button>
         </div>
     </div>
     
-    <div id="toast" class="toast">Link copied!</div>
+    <div id="toast" class="toast">Action</div>
 
     <script>
+        // --- CONFIG ---
+        const GOD_PASSWORD = "1234"; // CHANGE THIS PASSWORD IF YOU WANT
+        
         // --- DATA ---
         const DEFAULT_STATE = { 
-            step: 'SETUP', 
-            players: [], 
-            settings: { min: 1, max: 200, order: 'asc' },
-            startTime: null,
-            finalTime: null,
-            passIndex: 0,
-            viewingNumber: false
+            step: 'SETUP', players: [], settings: { min: 1, max: 200, order: 'asc' },
+            startTime: null, finalTime: null, passIndex: 0, viewingNumber: false
         };
         let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
         let timerInterval = null;
+        let godMode = false;
+        
         const app = document.getElementById('app');
+
+        // --- HAPTICS & WAKE LOCK ---
+        function pulse(ms = 10) {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        }
+        
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try { await navigator.wakeLock.request('screen'); } catch (err) {}
+            }
+        }
+
+        // --- SNOW EFFECT ---
+        function initSnow() {
+            const canvas = document.getElementById('snowCanvas');
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+            const snowflakes = [];
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            for (let i = 0; i < 50; i++) {
+                snowflakes.push({
+                    x: Math.random() * width, y: Math.random() * height,
+                    r: Math.random() * 3 + 1, d: Math.random() * 50
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.beginPath();
+                for (let i = 0; i < 50; i++) {
+                    const f = snowflakes[i];
+                    ctx.moveTo(f.x, f.y);
+                    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+                }
+                ctx.fill();
+                update();
+                requestAnimationFrame(draw);
+            }
+
+            function update() {
+                for (let i = 0; i < 50; i++) {
+                    const f = snowflakes[i];
+                    f.y += Math.pow(f.d, 2) + 1; // Speed
+                    f.y = f.y > height ? 0 : f.y;
+                    f.x += Math.sin(f.y / 50); // Wiggle
+                }
+            }
+            draw();
+        }
 
         // --- PERSISTENCE ---
         function loadState() {
@@ -279,60 +279,135 @@
                 } catch(e) {}
             }
         }
-        
-        function saveState() {
-            if (!new URLSearchParams(window.location.search).has('p')) {
-                localStorage.setItem('lineUpState', JSON.stringify(state));
+        function saveState() { if (!new URLSearchParams(window.location.search).has('p')) localStorage.setItem('lineUpState', JSON.stringify(state)); }
+
+        // --- PRESETS ---
+        function savePreset() {
+            if(state.players.length === 0) return showToast("No players to save");
+            const name = prompt("Name this group (e.g., 'Cousins'):");
+            if(name) {
+                const presets = JSON.parse(localStorage.getItem('lineUpPresets')) || [];
+                presets.push({ name, players: state.players.map(p => ({ name: p.name, number: 0 })) });
+                localStorage.setItem('lineUpPresets', JSON.stringify(presets));
+                showToast("Group Saved!");
             }
         }
-
-        function resetGameData() {
-            if(confirm('Clear all players and data?')) {
-                state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        function loadPreset(index) {
+            const presets = JSON.parse(localStorage.getItem('lineUpPresets')) || [];
+            if(presets[index]) {
+                state.players = JSON.parse(JSON.stringify(presets[index].players)); // Deep copy
                 saveState();
+                closeModal('presetsModal');
                 render();
+                showToast("Group Loaded!");
             }
         }
-
-        // --- LEADERBOARD ---
-        function getLeaderboard() { try { return JSON.parse(localStorage.getItem('lineUpLeaderboard')) || []; } catch(e) { return []; } }
-        function saveScore(timeInSec) {
-            const history = getLeaderboard();
-            const date = new Date().toLocaleDateString();
-            history.push({ date, players: state.players.length, time: timeInSec });
-            history.sort((a, b) => a.time - b.time);
-            if(history.length > 20) history.pop();
-            localStorage.setItem('lineUpLeaderboard', JSON.stringify(history));
+        function deletePreset(index) {
+            const presets = JSON.parse(localStorage.getItem('lineUpPresets')) || [];
+            presets.splice(index, 1);
+            localStorage.setItem('lineUpPresets', JSON.stringify(presets));
+            renderPresetsList();
         }
 
-        // --- TIMER ---
-        function startTimerTicker() {
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if(document.getElementById('timerDisplay') && state.startTime) {
-                    const diff = Math.floor((Date.now() - state.startTime) / 1000);
-                    document.getElementById('timerDisplay').innerText = `⏱️ ${formatTime(diff)}`;
-                }
-            }, 1000);
+        // --- HISTORY ---
+        function saveHistory(win) {
+            const log = JSON.parse(localStorage.getItem('lineUpHistory')) || [];
+            log.unshift({
+                date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
+                players: state.players.length,
+                time: formatTime(state.finalTime),
+                win: win
+            });
+            if(log.length > 20) log.pop();
+            localStorage.setItem('lineUpHistory', JSON.stringify(log));
         }
-        function formatTime(s) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`; }
 
-        // --- UTILS ---
-        const showToast = (msg) => {
-            const t = document.getElementById('toast');
-            t.textContent = msg; t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 2000);
-        };
-        const encodeData = (obj) => btoa(JSON.stringify(obj));
-        const decodeData = (str) => { try { return JSON.parse(atob(str)); } catch(e) { return null; } };
+        // --- RENDER HELPERS ---
+        function renderPresetsList() {
+            const presets = JSON.parse(localStorage.getItem('lineUpPresets')) || [];
+            const el = document.getElementById('presetsList');
+            if(presets.length === 0) { el.innerHTML = "<p>No saved groups.</p>"; return; }
+            el.innerHTML = presets.map((p, i) => `
+                <div class="item-card" style="margin-bottom:8px;">
+                    <div><strong>${p.name}</strong> <span style="font-size:0.8rem">(${p.players.length} ppl)</span></div>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-primary btn-sm" onclick="loadPreset(${i})">Load</button>
+                        <button class="btn-danger btn-sm" onclick="deletePreset(${i})">X</button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-        // --- RENDERING ---
-        function render() {
-            if (document.startViewTransition) {
-                document.startViewTransition(() => renderContent());
+        function renderHistoryList() {
+            const log = JSON.parse(localStorage.getItem('lineUpHistory')) || [];
+            const el = document.getElementById('historyList');
+            if(log.length === 0) { el.innerHTML = "<p>No games played yet.</p>"; return; }
+            el.innerHTML = log.map(g => `
+                <div class="item-card" style="margin-bottom:8px; ${g.win ? 'border-color:var(--success)' : ''}">
+                    <div>
+                        <div style="font-size:0.8rem; opacity:0.7">${g.date}</div>
+                        <strong>${g.players} Players</strong>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:bold;">${g.time}</div>
+                        <div>${g.win ? '✅' : '❌'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleTvMode() {
+            document.body.classList.toggle('tv-mode');
+            pulse();
+        }
+
+        function toggleGodMode() {
+            if(godMode) {
+                godMode = false;
+                render();
             } else {
-                renderContent();
+                const pass = prompt("Enter Admin Password:");
+                if(pass === GOD_PASSWORD) {
+                    godMode = true;
+                    showToast("🔓 God Mode Active");
+                    render();
+                } else {
+                    showToast("❌ Wrong Password");
+                }
             }
+        }
+
+        // --- CORE LOGIC ---
+        function calculateMVP(sorted) {
+            const total = state.players.length;
+            if(total < 2) return null;
+            let bestDelta = Infinity;
+            let mvpName = "";
+            
+            // Normalize numbers to 0-1 range to find ideal placement
+            const min = state.settings.min;
+            const max = state.settings.max;
+            
+            state.players.forEach((p, actualIndex) => {
+                // Where they SHOULD be mathematically
+                const idealPercent = (p.number - min) / (max - min); 
+                const idealIndex = idealPercent * (total - 1);
+                
+                // Difference between where they stood and mathematical perfection
+                const delta = Math.abs(actualIndex - idealIndex);
+                
+                if(delta < bestDelta) {
+                    bestDelta = delta;
+                    mvpName = p.name;
+                }
+            });
+            return mvpName;
+        }
+
+        // --- VIEWS ---
+        function render() {
+            if (document.startViewTransition) document.startViewTransition(renderContent);
+            else renderContent();
         }
 
         function renderContent() {
@@ -344,21 +419,17 @@
             else if (state.step === 'PASS_PLAY') renderPassPlay();
             else if (state.step === 'VERIFY') renderVerify();
             else if (state.step === 'RESULTS') renderResults();
-            else if (state.step === 'LEADERBOARD') renderLeaderboard();
         }
-
-        // --- VIEWS ---
 
         function renderSetup() {
             app.innerHTML = `
-                <h1>🔢 Line Up!</h1>
-                <p>The party game of hidden numbers.</p>
-                
+                <button class="top-left-btn" onclick="toggleTvMode()" title="TV Mode">📺</button>
+                <h1>Line Up!</h1>
+                <p>The Ultimate Party Game</p>
                 <div class="row">
                     <div class="col"><label class="label">Min</label><input type="number" id="minInput" value="${state.settings.min}"></div>
                     <div class="col"><label class="label">Max</label><input type="number" id="maxInput" value="${state.settings.max}"></div>
                 </div>
-                
                 <div style="margin-top:15px;">
                     <label class="label">Sort Order</label>
                     <select id="orderInput">
@@ -366,52 +437,40 @@
                         <option value="desc" ${state.settings.order === 'desc' ? 'selected' : ''}>Biggest → Smallest</option>
                     </select>
                 </div>
-                
                 <div class="divider"></div>
-                
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label class="label" style="margin:0;">Players (${state.players.length})</label>
-                    <div>
-                        <button class="btn-secondary btn-sm" style="margin-right:5px;" onclick="setState('LEADERBOARD')">🏆 Scores</button>
-                        ${state.players.length > 0 ? `<button class="btn-secondary btn-sm" onclick="resetGameData()">Reset</button>` : ''}
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-secondary btn-sm" onclick="openModal('presetsModal')">💾 Groups</button>
+                        <button class="btn-secondary btn-sm" onclick="openModal('historyModal')">📜 History</button>
+                        <button class="btn-secondary btn-sm" onclick="savePreset()">+Save</button>
                     </div>
                 </div>
-                
                 <div class="row" style="margin-top:10px; margin-bottom:15px;">
                     <input type="text" id="nameInput" placeholder="Name" onkeydown="if(event.key==='Enter') addPlayer()">
                     <button class="btn-primary" style="width:auto;" onclick="addPlayer()">Add</button>
                 </div>
-                
                 <div class="list-wrap">
-                    ${state.players.length === 0 ? '<div style="text-align:center; opacity:0.5; padding:20px;">Add players to begin...</div>' : ''}
+                    ${state.players.length === 0 ? '<div style="text-align:center; opacity:0.5; padding:20px;">Add players...</div>' : ''}
                     ${state.players.map((p, i) => `
-                        <div class="item-card" style="animation-delay: ${i * 0.05}s">
+                        <div class="item-card">
                             <span style="font-weight:700;">${p.name}</span>
                             <button class="btn-danger btn-icon" style="width:32px; height:32px; font-size:1rem;" onclick="removePlayer(${i})">✕</button>
                         </div>
                     `).join('')}
                 </div>
-                
-                <button class="btn-primary" onclick="startGame()" ${state.players.length < 2 ? 'disabled' : ''}>
-                    ${state.players.length < 2 ? 'Add Players to Start' : 'Generate Game Links'}
-                </button>
-                
+                <button class="btn-primary" onclick="startGame()" ${state.players.length < 2 ? 'disabled' : ''}>${state.players.length < 2 ? 'Add Players to Start' : 'Generate Links'}</button>
                 <div style="text-align:center; margin: 12px 0; font-size: 0.8rem; font-weight:800; opacity:0.5; letter-spacing:1px;">— OR —</div>
-                
-                <button class="btn-secondary" onclick="startPassGame()" ${state.players.length < 2 ? 'disabled' : ''}>
-                    📱 Pass & Play (One Device)
-                </button>
+                <button class="btn-secondary" onclick="startPassGame()" ${state.players.length < 2 ? 'disabled' : ''}>📱 Pass & Play</button>
             `;
         }
 
         function renderDistribute() {
             const baseUrl = window.location.href.split('?')[0];
             const currentSeconds = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
-            
             app.innerHTML = `
                 <div style="text-align:center;"><div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div></div>
-                <h2>🔗 Send Links</h2>
-                <p>Distribute numbers to players.</p>
+                <h2>🔗 Distribute</h2>
                 <div class="list-wrap">
                     ${state.players.map((p, i) => {
                         const payload = { n: p.name, v: p.number, min: state.settings.min, max: state.settings.max, o: state.settings.order };
@@ -424,16 +483,15 @@
                             </div>
                             <div class="row" style="width:100%; gap:8px;">
                                 <button class="btn-secondary btn-icon" onclick="showQr('${link}', '${p.name}')">🏁</button>
-                                <button class="btn-secondary btn-sm" style="flex:1" onclick="copyLink('${link}')">Copy Link</button>
+                                <button class="btn-secondary btn-sm" style="flex:1" onclick="copyLink('${link}')">Copy</button>
                                 <button class="btn-secondary btn-icon" onclick="shareLink('${link}', '${p.name}')">📤</button>
                             </div>
-                        </div>
-                        `;
+                        </div>`;
                     }).join('')}
                 </div>
                 <div style="text-align:center; margin-top:20px;">
                     <button class="btn-primary" onclick="setState('VERIFY')">Start Verification</button>
-                    <button class="btn-secondary" style="margin-top:10px;" onclick="setState('SETUP')">Edit Setup</button>
+                    <button class="btn-secondary" style="margin-top:10px;" onclick="setState('SETUP')">Back</button>
                 </div>
             `;
             startTimerTicker();
@@ -441,37 +499,23 @@
 
         function renderPassPlay() {
             const p = state.players[state.passIndex];
-            const orderText = state.settings.order === 'asc' ? 'Smallest to Biggest' : 'Biggest to Smallest';
-            const orderArrow = state.settings.order === 'asc' ? '↗️' : '↘️';
-
+            const orderText = state.settings.order === 'asc' ? 'Smallest ➔ Biggest' : 'Biggest ➔ Smallest';
             if (!state.viewingNumber) {
                 app.innerHTML = `
                     <div style="text-align:center; margin-top:20px;">
                         <h1 style="font-size:4rem; margin-bottom:20px; animation: bounce 1s infinite;">📱</h1>
-                        <h2>Pass device to<br><span style="color:var(--primary); font-size:2.5rem;">${p.name}</span></h2>
+                        <h2>Pass to<br><span style="color:var(--primary); font-size:2.5rem;">${p.name}</span></h2>
                         <div class="divider"></div>
                         <button class="btn-primary" onclick="state.viewingNumber=true; saveState(); render()">I am ${p.name}</button>
-                    </div>
-                `;
+                    </div>`;
             } else {
                 app.innerHTML = `
-                    <div style="text-align:center;">
-                        <h2>Hi, ${p.name}!</h2>
-                        <p>Tap & hold below.</p>
-                    </div>
-                    <div class="secret-container" id="secretBox">
-                        <div class="secret-overlay">HOLD TO REVEAL</div>
-                        <div class="big-number secret-blur">${p.number}</div>
-                    </div>
+                    <div style="text-align:center;"><h2>Hi, ${p.name}!</h2><p>Tap & hold to reveal.</p></div>
+                    <div class="secret-container" id="secretBox"><div class="secret-overlay">HOLD</div><div class="big-number secret-blur">${p.number}</div></div>
                     <div style="background:var(--bg-item); padding:15px; border-radius:16px; text-align:left; font-size:0.95rem; margin-bottom:20px;">
-                        <ul style="padding-left:20px; margin:0; line-height:1.6;">
-                            <li>Range: <strong>${state.settings.min} - ${state.settings.max}</strong></li>
-                            <li>Order: <strong>${orderText} ${orderArrow}</strong></li>
-                        </ul>
+                        Range: <strong>${state.settings.min} - ${state.settings.max}</strong><br>Order: <strong>${orderText}</strong>
                     </div>
-                    <button class="btn-primary" onclick="nextPassPlayer()">
-                        ${state.passIndex < state.players.length - 1 ? 'Next Player' : 'Go to Line Up!'}
-                    </button>
+                    <button class="btn-primary" onclick="nextPassPlayer()">${state.passIndex < state.players.length - 1 ? 'Next Player' : 'Go to Line Up!'}</button>
                 `;
                 bindSecretBox();
             }
@@ -479,19 +523,24 @@
 
         function renderVerify() {
             if (!state.startTime) state.startTime = Date.now();
-            const orderText = state.settings.order === 'asc' ? 'Smallest to Biggest' : 'Biggest to Smallest';
             const currentSeconds = Math.floor((Date.now() - state.startTime) / 1000);
-            
             app.innerHTML = `
-                <div style="text-align:center;"><div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div></div>
-                <h2>🧐 Verify Order</h2>
-                <p>Goal: <strong>${orderText}</strong></p>
+                <div style="text-align:center;">
+                    <div id="timerDisplay" class="timer-badge">⏱️ ${formatTime(currentSeconds)}</div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>🧐 Verify</h2>
+                    <button class="btn-secondary btn-icon" style="width:36px; height:36px; font-size:1rem;" onclick="toggleGodMode()">${godMode ? '🔓' : '🔒'}</button>
+                </div>
                 <div class="list-wrap">
                     ${state.players.map((p, i) => `
                         <div class="item-card" style="transition: transform 0.3s ease;">
                             <div style="display:flex; align-items:center;">
                                 <div class="rank-badge">${i + 1}</div>
-                                <span style="font-weight:700;">${p.name}</span>
+                                <div>
+                                    <span style="font-weight:700;">${p.name}</span>
+                                    ${godMode ? `<span style="margin-left:8px; color:var(--primary); font-weight:900;">(${p.number})</span>` : ''}
+                                </div>
                             </div>
                             <div style="display:flex; gap:8px;">
                                 <button class="btn-secondary btn-icon" onclick="movePlayer(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
@@ -510,17 +559,20 @@
             clearInterval(timerInterval);
             const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
             let allCorrect = true;
-            
+            const mvp = calculateMVP(sorted);
+
             const listHtml = state.players.map((p, i) => {
                 const isCorrect = p.name === sorted[i].name;
                 if (!isCorrect) allCorrect = false;
                 const realRank = sorted.findIndex(x => x.name === p.name) + 1;
+                const isMvp = p.name === mvp;
                 return `
-                    <div class="item-card ${isCorrect ? 'correct' : 'wrong'}" style="animation-delay: ${i * 0.1}s">
+                    <div class="item-card ${isCorrect ? 'correct' : 'wrong'} ${isMvp ? 'gold' : ''}" style="animation-delay: ${i * 0.1}s">
                         <div>
                             <div style="display:flex; align-items:center;">
                                 <div class="rank-badge" style="background:${isCorrect ? 'var(--success)' : 'var(--danger)'}; color:white;">${i+1}</div>
                                 <strong>${p.name}</strong>
+                                ${isMvp ? '<span style="margin-left:8px; font-size:0.8rem; background:var(--gold); color:white; padding:2px 6px; border-radius:4px;">⭐ MVP</span>' : ''}
                             </div>
                             <div style="font-size:0.85rem; margin-top:6px; margin-left:40px; opacity:0.8;">
                                 Number: <strong>${p.number}</strong>
@@ -528,97 +580,55 @@
                             </div>
                         </div>
                         <div style="font-size:1.5rem;">${isCorrect ? '✅' : '❌'}</div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
 
             let timeMsg = "";
             if(allCorrect) {
                 const duration = Math.floor((Date.now() - state.startTime) / 1000);
                 if(!state.finalTime) {
-                    saveScore(duration);
-                    state.finalTime = duration; 
-                    saveState();
+                    state.finalTime = duration; saveState(); saveHistory(true);
                     setTimeout(() => confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } }), 200);
                 }
-                timeMsg = `<div class="timer-badge" style="background:var(--gold); color:white; animation: popIn 0.5s;">Completed in ${formatTime(state.finalTime || duration)}</div>`;
+                timeMsg = `<div class="timer-badge" style="background:var(--gold); color:white; animation: popIn 0.5s;">Time: ${formatTime(state.finalTime)}</div>`;
+            } else if (!state.finalTime) {
+                // Save loss once
+                 state.finalTime = Math.floor((Date.now() - state.startTime) / 1000);
+                 saveHistory(false);
             }
 
             app.innerHTML = `
                 <div style="text-align:center;">${timeMsg}</div>
-                <h1>${allCorrect ? '🎉 Perfect!' : '😬 So Close!'}</h1>
-                <p>${allCorrect ? 'Correct order!' : 'Incorrect order.'}</p>
+                <h1>${allCorrect ? '🎉 Perfect!' : '😬 Close!'}</h1>
                 <div class="list-wrap">${listHtml}</div>
                 <button class="btn-primary" onclick="restartSamePlayers()">🔄 Play Again</button>
-                <button class="btn-secondary" style="margin-top:10px;" onclick="setState('LEADERBOARD')">🏆 Leaderboard</button>
                 <button class="btn-secondary" style="margin-top:10px;" onclick="resetGameData()">New Game</button>
-            `;
-        }
-        
-        function renderLeaderboard() {
-            const scores = getLeaderboard();
-            const count = state.players.length || 0;
-            const relevant = scores.filter(s => s.players === count);
-            const list = relevant.length ? relevant.map((s, i) => `
-                <div class="item-card ${i===0 ? 'gold' : ''}" style="animation-delay: ${i*0.1}s">
-                    <div style="display:flex; align-items:center;">
-                        <div class="rank-badge" style="${i===0 ? 'background:var(--gold); color:white;' : ''}">#${i+1}</div>
-                        <div>
-                            <strong>${formatTime(s.time)}</strong>
-                            <div style="font-size:0.8rem; opacity:0.6;">${s.date}</div>
-                        </div>
-                    </div>
-                    <div style="font-size:0.9rem; font-weight:bold;">${s.players} P</div>
-                </div>
-            `).join('') : `<div style="text-align:center; padding:30px; opacity:0.6;">No records for ${count} players.</div>`;
-
-            app.innerHTML = `
-                <h1>🏆 Leaderboard</h1>
-                <p>Best times for <strong>${count} players</strong>.</p>
-                <div class="list-wrap">${list}</div>
-                <button class="btn-secondary" onclick="setState('SETUP')">Back</button>
             `;
         }
 
         function renderPlayerView(encodedData) {
             const data = decodeData(encodedData);
             if (!data) return app.innerHTML = `<h2>Error</h2><p>Broken link.</p>`;
-            const orderArrow = data.o === 'asc' ? '↗️' : '↘️';
-            const orderText = data.o === 'asc' ? 'Smallest to Biggest' : 'Biggest to Smallest';
-
             app.innerHTML = `
-                <div style="text-align:center;">
-                    <div style="font-size:3rem; margin-bottom:10px;">🤫</div>
-                    <h2>Hi, ${data.n}!</h2>
-                    <p>Tap & hold below to reveal.</p>
-                </div>
-                <div class="secret-container" id="secretBox">
-                    <div class="secret-overlay">HOLD TO REVEAL</div>
-                    <div class="big-number secret-blur">${data.v}</div>
-                </div>
+                <div style="text-align:center;"><h2>Hi, ${data.n}!</h2><p>Tap & hold.</p></div>
+                <div class="secret-container" id="secretBox"><div class="secret-overlay">HOLD</div><div class="big-number secret-blur">${data.v}</div></div>
                 <div style="background:var(--bg-item); padding:20px; border-radius:16px; text-align:left; font-size:0.95rem;">
-                    <label class="label" style="color:var(--primary);">Mission</label>
-                    <ul style="padding-left:20px; margin:5px 0; line-height:1.6;">
-                        <li>Range: <strong>${data.min} - ${data.max}</strong></li>
-                        <li>Order: <strong>${orderText} ${orderArrow}</strong></li>
-                    </ul>
-                </div>
-            `;
+                    Range: <strong>${data.min} - ${data.max}</strong>
+                </div>`;
             bindSecretBox();
         }
 
-        // --- CONTROLLER ---
+        // --- CONTROLLER LOGIC ---
         function addPlayer() {
             const input = document.getElementById('nameInput');
             const name = input.value.trim();
             if (!name) return;
-            if (state.players.find(p => p.name === name)) return showToast("Name taken!");
             state.players.push({ name, number: 0 });
-            input.value = '';
-            setState('SETUP');
+            input.value = ''; setState('SETUP');
             setTimeout(() => document.getElementById('nameInput').focus(), 50);
+            pulse();
         }
-        function removePlayer(i) { state.players.splice(i, 1); setState('SETUP'); }
+        function removePlayer(i) { state.players.splice(i, 1); setState('SETUP'); pulse(); }
         
         function generateNumbers() {
             const min = parseInt(document.getElementById('minInput') ? document.getElementById('minInput').value : state.settings.min);
@@ -626,82 +636,60 @@
             if (min >= max) { showToast("Min must be < Max!"); return false; }
             state.settings.min = min; state.settings.max = max; 
             if(document.getElementById('orderInput')) state.settings.order = document.getElementById('orderInput').value;
-            
             const used = new Set();
             state.players.forEach(p => {
-                let num, attempts = 0;
-                do { num = Math.floor(Math.random() * (max - min + 1)) + min; attempts++; } while (used.has(num) && attempts < 1000);
+                let num; do { num = Math.floor(Math.random() * (max - min + 1)) + min; } while (used.has(num));
                 used.add(num); p.number = num;
             });
             return true;
         }
 
-        function startGame() {
-            if(!generateNumbers()) return;
-            state.startTime = Date.now();
-            state.finalTime = null;
-            setState('DISTRIBUTE');
-        }
-
-        function startPassGame() {
-            if(state.players.length < 2) return showToast("Add players first!");
-            if(!generateNumbers()) return;
-            state.passIndex = 0;
-            state.viewingNumber = false;
-            state.startTime = null;
-            setState('PASS_PLAY');
-        }
-
+        function startGame() { if(generateNumbers()) { state.startTime = Date.now(); state.finalTime = null; setState('DISTRIBUTE'); pulse(); requestWakeLock(); } }
+        function startPassGame() { if(generateNumbers()) { state.passIndex = 0; state.viewingNumber = false; state.startTime = null; setState('PASS_PLAY'); pulse(); requestWakeLock(); } }
         function nextPassPlayer() {
-            if (state.passIndex < state.players.length - 1) {
-                state.passIndex++;
-                state.viewingNumber = false;
-                saveState();
-                render(); // Trigger view transition
-            } else {
-                state.startTime = Date.now();
-                setState('VERIFY');
-            }
+            if (state.passIndex < state.players.length - 1) { state.passIndex++; state.viewingNumber = false; saveState(); render(); } 
+            else { state.startTime = Date.now(); setState('VERIFY'); }
+            pulse();
         }
-        
         function restartSamePlayers() { state.startTime = null; state.finalTime = null; startGame(); }
-
+        
         function bindSecretBox() {
             const box = document.getElementById('secretBox');
             if(!box) return;
-            const reveal = (e) => { if(e.cancelable) e.preventDefault(); box.classList.add('revealed'); };
+            const reveal = (e) => { if(e.cancelable) e.preventDefault(); box.classList.add('revealed'); pulse(5); };
             const hide = (e) => { if(e.cancelable) e.preventDefault(); box.classList.remove('revealed'); };
             ['touchstart','mousedown'].forEach(e => box.addEventListener(e, reveal, {passive:false}));
             ['touchend','touchcancel','mouseup','mouseleave'].forEach(e => box.addEventListener(e, hide));
         }
 
-        function copyLink(url) { navigator.clipboard.writeText(url); showToast("Link copied!"); }
+        function copyLink(url) { navigator.clipboard.writeText(url); showToast("Link copied!"); pulse(); }
         async function shareLink(url, name) {
-            if (navigator.share) { try { await navigator.share({ title: 'Line Up!', text: `Secret number for ${name}`, url: url }); } catch (err) {} } else { copyLink(url); }
+            pulse();
+            if (navigator.share) { try { await navigator.share({ title: 'Line Up!', text: `Number for ${name}`, url: url }); } catch (err) {} } else { copyLink(url); }
         }
-
         function showQr(url, name) {
-            const modal = document.getElementById('qrModal');
-            const container = document.getElementById('qrDisplay');
+            pulse(); openModal('qrModal');
             document.getElementById('qrName').textContent = name;
-            container.innerHTML = '';
-            new QRCode(container, { text: url, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
-            modal.classList.add('active');
+            const c = document.getElementById('qrDisplay'); c.innerHTML = '';
+            new QRCode(c, { text: url, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
         }
-        function closeQr() { document.getElementById('qrModal').classList.remove('active'); }
-
+        
         function movePlayer(index, dir) {
             const target = index + dir;
             if (target < 0 || target >= state.players.length) return;
             [state.players[index], state.players[target]] = [state.players[target], state.players[index]];
-            renderVerify(); // Re-render with View Transition
-            saveState();
+            renderVerify(); saveState(); pulse();
         }
-        function checkOrder() { setState('RESULTS'); }
-        function setState(s) { state.step = s; saveState(); render(); }
         
+        function openModal(id) { document.getElementById(id).classList.add('active'); if(id==='presetsModal') renderPresetsList(); if(id==='historyModal') renderHistoryList(); pulse(); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); pulse(); }
+        function checkOrder() { setState('RESULTS'); pulse(50); }
+        function setState(s) { state.step = s; saveState(); render(); }
+        function formatTime(s) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`; }
+
+        initSnow();
         loadState();
-        render(); // Initial Render
+        render();
     </script>
 </body>
 </html>
