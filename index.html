@@ -135,7 +135,6 @@
 
         .btn-icon { width: 44px; padding: 0; font-size: 1.2rem; flex-shrink: 0; }
         .btn-sm { padding: 8px 14px; font-size: 0.85rem; width: auto; border-radius: 12px; }
-        .top-corner-btn { position: absolute; top: 20px; right: 20px; z-index: 10; }
 
         /* --- LIST ITEMS --- */
         .list-wrap { 
@@ -327,9 +326,8 @@
         const encodeData = (obj) => btoa(JSON.stringify(obj));
         const decodeData = (str) => { try { return JSON.parse(atob(str)); } catch(e) { return null; } };
 
-        // --- RENDERING (With View Transitions) ---
+        // --- RENDERING ---
         function render() {
-            // Use native View Transition if supported for fluid morphing
             if (document.startViewTransition) {
                 document.startViewTransition(() => renderContent());
             } else {
@@ -353,7 +351,6 @@
 
         function renderSetup() {
             app.innerHTML = `
-                <button class="btn-secondary top-corner-btn" onclick="startPassGame()">📱 Pass Mode</button>
                 <h1>🔢 Line Up!</h1>
                 <p>The party game of hidden numbers.</p>
                 
@@ -396,7 +393,13 @@
                 </div>
                 
                 <button class="btn-primary" onclick="startGame()" ${state.players.length < 2 ? 'disabled' : ''}>
-                    ${state.players.length < 2 ? 'Add Players to Start' : 'Generate Links'}
+                    ${state.players.length < 2 ? 'Add Players to Start' : 'Generate Game Links'}
+                </button>
+                
+                <div style="text-align:center; margin: 12px 0; font-size: 0.8rem; font-weight:800; opacity:0.5; letter-spacing:1px;">— OR —</div>
+                
+                <button class="btn-secondary" onclick="startPassGame()" ${state.players.length < 2 ? 'disabled' : ''}>
+                    📱 Pass & Play (One Device)
                 </button>
             `;
         }
