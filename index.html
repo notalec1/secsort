@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Line Up!</title>
-    <!-- Import a fun, rounded font -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
         :root {
             --primary: #6366f1;
@@ -45,6 +48,8 @@
             box-shadow: var(--shadow);
             backdrop-filter: blur(10px);
             animation: slideUp 0.4s ease-out;
+            position: relative;
+            z-index: 1;
         }
 
         @keyframes slideUp {
@@ -109,24 +114,16 @@
 
         button:active { transform: scale(0.98); }
         
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-        }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
         .btn-primary:hover { background: var(--primary-dark); }
         .btn-primary:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
 
-        .btn-secondary {
-            background: #f3f4f6;
-            color: var(--text-main);
-            border: 1px solid #e5e7eb;
-        }
+        .btn-secondary { background: #f3f4f6; color: var(--text-main); border: 1px solid #e5e7eb; }
         .btn-secondary:hover { background: #e5e7eb; }
 
         .btn-danger { background: #fee2e2; color: var(--danger); }
         .btn-icon { width: 44px; padding: 0; font-size: 1.2rem; flex-shrink: 0; }
-        .btn-sm { padding: 8px 16px; font-size: 0.9rem; width: auto; }
+        .btn-sm { padding: 10px 16px; font-size: 0.9rem; width: auto; }
 
         /* --- LIST ITEMS --- */
         .list-wrap {
@@ -174,58 +171,58 @@
             user-select: none;
         }
 
-        .secret-blur {
-            filter: blur(20px);
-            opacity: 0.3;
-            transition: all 0.3s ease;
-        }
-
+        .secret-blur { filter: blur(20px); opacity: 0.3; transition: all 0.3s ease; }
         .secret-overlay {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--text-main);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--text-main); color: white; padding: 8px 16px;
+            border-radius: 20px; font-size: 0.9rem; font-weight: bold;
+            pointer-events: none; transition: opacity 0.3s;
+        }
+        .secret-container:hover .secret-blur, .secret-container:active .secret-blur { filter: blur(0); opacity: 1; }
+        .secret-container:hover .secret-overlay, .secret-container:active .secret-overlay { opacity: 0; }
+        .big-number { font-size: 6rem; font-weight: 900; color: var(--primary); text-align: center; line-height: 1; }
+
+        /* --- MODAL (QR CODE) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
         }
-
-        .secret-container:hover .secret-blur,
-        .secret-container:active .secret-blur {
-            filter: blur(0);
-            opacity: 1;
-        }
-
-        .secret-container:hover .secret-overlay,
-        .secret-container:active .secret-overlay {
-            opacity: 0;
-        }
-
-        .big-number {
-            font-size: 6rem;
-            font-weight: 900;
-            color: var(--primary);
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
             text-align: center;
-            line-height: 1;
+            width: 90%;
+            max-width: 320px;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        
+        #qrDisplay {
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
         }
 
         /* --- UTILS --- */
         .hidden { display: none; }
         .divider { height: 1px; background: #e5e7eb; margin: 20px 0; }
-        
         .toast {
-            position: fixed; bottom: 30px; left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: #1f2937; color: white;
-            padding: 12px 24px; border-radius: 50px;
-            font-weight: 600; font-size: 0.9rem;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            opacity: 0; pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #1f2937; color: white; padding: 12px 24px; border-radius: 50px;
+            font-weight: 600; font-size: 0.9rem; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 1000;
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -237,7 +234,18 @@
     <div class="app-card" id="app">
         <!-- Content injected by JS -->
     </div>
+
+    <!-- QR MODAL -->
+    <div class="modal-overlay" id="qrModal" onclick="closeQr()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 id="qrName" style="margin-bottom:5px;">Player</h2>
+            <p style="margin-bottom:0; font-size:0.9rem;">Scan to join</p>
+            <div id="qrDisplay"></div>
+            <button class="btn-secondary" onclick="closeQr()">Close</button>
+        </div>
+    </div>
     
+    <!-- TOAST -->
     <div id="toast" class="toast">Link copied!</div>
 
     <script>
@@ -262,6 +270,33 @@
         const decodeData = (str) => {
             try { return JSON.parse(atob(str)); } catch(e) { return null; }
         };
+
+        // --- QR LOGIC ---
+        function showQr(url, name) {
+            const modal = document.getElementById('qrModal');
+            const container = document.getElementById('qrDisplay');
+            const title = document.getElementById('qrName');
+            
+            // Clear previous
+            container.innerHTML = '';
+            title.textContent = name;
+            
+            // Generate QR
+            new QRCode(container, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+
+            modal.classList.add('active');
+        }
+
+        function closeQr() {
+            document.getElementById('qrModal').classList.remove('active');
+        }
 
         // --- VIEWS ---
 
@@ -320,7 +355,7 @@
             
             app.innerHTML = `
                 <h2>🔗 Send Links</h2>
-                <p>Send each player their secret link.</p>
+                <p>Use QR codes or send links to players.</p>
                 
                 <div class="list-wrap">
                     ${state.players.map(p => {
@@ -331,14 +366,17 @@
                         <div class="item-card" style="flex-direction:column; align-items:stretch; gap:10px;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <span style="font-weight:800;">${p.name}</span>
-                                <span style="font-size:0.8rem; background:#e0e7ff; color:var(--primary); padding:2px 8px; border-radius:10px; font-weight:700;">HIDDEN</span>
+                                <span style="font-size:0.75rem; background:#e0e7ff; color:var(--primary); padding:2px 8px; border-radius:10px; font-weight:700;">HIDDEN</span>
                             </div>
-                            <div class="row">
+                            <div class="row" style="gap:8px;">
+                                <button class="btn-secondary btn-icon" style="flex:0 0 auto;" onclick="showQr('${link}', '${p.name}')">
+                                    <span style="font-size:1.4rem">🏁</span>
+                                </button>
                                 <button class="btn-secondary btn-sm" style="flex:1" onclick="shareLink('${link}', '${p.name}')">
-                                    <span style="font-size:1.2rem">📤</span> Share
+                                    <span style="font-size:1.1rem">📤</span> Send
                                 </button>
                                 <button class="btn-secondary btn-sm" style="flex:1" onclick="window.open('${link}', '_blank')">
-                                    <span style="font-size:1.2rem">👁️</span> Open
+                                    <span style="font-size:1.1rem">👁️</span> Open
                                 </button>
                             </div>
                         </div>
@@ -498,7 +536,6 @@
         }
 
         async function shareLink(url, name) {
-            // Try native share first (mobile)
             if (navigator.share) {
                 try {
                     await navigator.share({
@@ -507,11 +544,8 @@
                         url: url
                     });
                     return;
-                } catch (err) {
-                    // Fallback if user cancels or fails
-                }
+                } catch (err) {}
             }
-            // Fallback to clipboard
             navigator.clipboard.writeText(url);
             showToast(`Link for ${name} copied!`);
         }
