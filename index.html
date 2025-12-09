@@ -168,18 +168,33 @@
             position: relative;
             margin: 30px 0;
             cursor: pointer;
-            user-select: none;
+            
+            /* CRITICAL MOBILE FIXES */
+            user-select: none; /* Stops text highlighting */
+            -webkit-user-select: none;
+            -webkit-touch-callout: none; /* Stops 'Copy' menu */
+            touch-action: manipulation;
         }
 
-        .secret-blur { filter: blur(20px); opacity: 0.3; transition: all 0.3s ease; }
+        .secret-blur { 
+            filter: blur(20px); 
+            opacity: 0.3; 
+            transition: all 0.2s ease; 
+        }
+        
         .secret-overlay {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--text-main); color: white; padding: 8px 16px;
-            border-radius: 20px; font-size: 0.9rem; font-weight: bold;
-            pointer-events: none; transition: opacity 0.3s;
+            background: var(--text-main); color: white; padding: 10px 20px;
+            border-radius: 30px; font-size: 1rem; font-weight: bold;
+            pointer-events: none; transition: opacity 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            white-space: nowrap;
         }
-        .secret-container:hover .secret-blur, .secret-container:active .secret-blur { filter: blur(0); opacity: 1; }
-        .secret-container:hover .secret-overlay, .secret-container:active .secret-overlay { opacity: 0; }
+
+        /* State Classes (toggled by JS now) */
+        .secret-container.revealed .secret-blur { filter: blur(0); opacity: 1; }
+        .secret-container.revealed .secret-overlay { opacity: 0; }
+        
         .big-number { font-size: 6rem; font-weight: 900; color: var(--primary); text-align: center; line-height: 1; }
 
         /* --- MODAL (QR CODE) --- */
@@ -277,17 +292,12 @@
             const container = document.getElementById('qrDisplay');
             const title = document.getElementById('qrName');
             
-            // Clear previous
             container.innerHTML = '';
             title.textContent = name;
             
-            // Generate QR
             new QRCode(container, {
-                text: url,
-                width: 200,
-                height: 200,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
+                text: url, width: 200, height: 200,
+                colorDark : "#000000", colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
 
@@ -473,10 +483,10 @@
                 <div style="text-align:center;">
                     <div style="font-size:3rem; margin-bottom:10px;">🤫</div>
                     <h2>Hi, ${data.n}!</h2>
-                    <p>Hold the number below to reveal it.</p>
+                    <p>Tap & hold below to reveal.</p>
                 </div>
 
-                <div class="secret-container">
+                <div class="secret-container" id="secretBox">
                     <div class="secret-overlay">HOLD TO REVEAL</div>
                     <div class="big-number secret-blur">${data.v}</div>
                 </div>
@@ -490,6 +500,28 @@
                     </ul>
                 </div>
             `;
+
+            // --- MOBILE/DESKTOP TOUCH LOGIC ---
+            const box = document.getElementById('secretBox');
+            
+            const reveal = (e) => {
+                if(e.cancelable) e.preventDefault(); // Prevents selection
+                box.classList.add('revealed');
+            };
+            const hide = (e) => {
+                if(e.cancelable) e.preventDefault();
+                box.classList.remove('revealed');
+            };
+
+            // Touch (Mobile)
+            box.addEventListener('touchstart', reveal, { passive: false });
+            box.addEventListener('touchend', hide);
+            box.addEventListener('touchcancel', hide);
+
+            // Mouse (Desktop)
+            box.addEventListener('mousedown', reveal);
+            box.addEventListener('mouseup', hide);
+            box.addEventListener('mouseleave', hide);
         }
 
         // --- CONTROLLER ---
