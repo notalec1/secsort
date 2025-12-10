@@ -89,6 +89,21 @@
             <button class="btn-secondary" onclick="closeModal('dataModal')">Close</button>
         </div>
     </div>
+
+    <!-- NEW: Music Modal -->
+    <div class="modal-overlay" id="musicModal" onclick="closeModal('musicModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2>🎵 DJ Booth</h2>
+            <div style="margin-bottom: 20px;">
+                <button id="stopMusicBtn" class="btn-danger btn-sm" onclick="stopMusic()">⏹ Stop Music</button>
+            </div>
+            <div id="musicList" style="margin:20px 0; text-align:left; max-height: 300px; overflow-y:auto;"></div>
+            <button class="btn-secondary" onclick="closeModal('musicModal')">Close</button>
+        </div>
+    </div>
+
+    <!-- NEW: Hidden Audio Player -->
+    <audio id="bgAudio" loop></audio>
     
     <div id="toast" class="toast">Action</div>
     <div class="emergency-reset" onclick="if(confirm('Hard Reset?')) { localStorage.clear(); location.reload(); }">🗑️</div>
