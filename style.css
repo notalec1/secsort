@@ -547,7 +547,7 @@ body.is-tv-mode .timer-badge {
 
 .big-number {
     font-size: 7rem;
-    font-weight: 11000;
+    font-weight: 900;
     color: var(--primary);
     line-height: 1;
 }
