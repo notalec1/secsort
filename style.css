@@ -567,12 +567,12 @@ body.is-tv-mode .timer-badge {
     max-width: 600px;         /* The width you just changed */
     
     /* --- NEW CHANGES START HERE --- */
-    min-height: 400px;        /* Forces the box to be at least 400px tall */
+    min-height: 80px;        /* Forces the box to be at least 400px tall */
     display: flex;            /* These 3 lines center the content vertically */
     flex-direction: column;   
     justify-content: center;  
     
-    font-size: 1.3rem;        /* Increases the text size (Default is usually 1rem) */
+    font-size: 1.9rem;        /* Increases the text size (Default is usually 1rem) */
     /* --- NEW CHANGES END HERE --- */
 
     transform: scale(1.4); 
