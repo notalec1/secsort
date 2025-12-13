@@ -240,3 +240,27 @@ body.is-tv-mode .timer-badge { font-size: 3.5rem; padding: 10px 30px; }
 .emergency-reset { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; font-size: 20px; cursor: pointer; z-index: 9999; }
 .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text-main); color: var(--bg-card); padding: 14px 28px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); opacity: 0; pointer-events: none; transition: all 0.4s; z-index: 1000; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* --- DRAMATIC REVEAL STYLES --- */
+
+/* Pending State (Before Reveal) */
+.item-card.pending {
+    background: var(--bg-item) !important;
+    border-color: var(--border);
+    opacity: 0.7;
+    filter: grayscale(1);
+    transform: scale(0.98);
+}
+
+/* Animation for when a card gets revealed */
+.item-card.just-revealed {
+    animation: revealPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 10;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+@keyframes revealPop {
+    0% { transform: scale(0.95); opacity: 0.5; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
