@@ -19,12 +19,12 @@ const DEFAULT_STATE = {
     finalTime: null, 
     passIndex: 0, 
     viewingNumber: false,
-    revealedCount: 0 // NEW: Tracks how many cards are flipped
+    revealedCount: 0 
 };
 
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let timerInterval = null;
-let revealInterval = null; // NEW: Timer for auto-reveal
+let revealInterval = null; 
 let godMode = false;
 let viewMode = sessionStorage.getItem('lineUpViewMode') || null; 
 const app = document.getElementById('app');
@@ -55,7 +55,7 @@ function resetViewMode() {
     render();
 }
 
-// --- THEME MANAGER & SFX ---
+// --- THEME MANAGER & SFX (V2) ---
 const DEFAULT_THEME = { 
     blur: 15, scale: 1.0, snow: true, sfx: true,
     color: '#6366f1', font: "'Nunito', sans-serif", speed: 6
@@ -151,7 +151,7 @@ function loadState() {
         if (saved) {
             state = JSON.parse(saved);
             if (state.step === 'DISTRIBUTE') { state.startTime = null; state.finalTime = null; }
-            if (state.revealedCount === undefined) state.revealedCount = 0; // Backwards compatibility
+            if (state.revealedCount === undefined) state.revealedCount = 0; 
             if ((state.step === 'VERIFY') && state.startTime) startTimerTicker();
         }
     } catch (e) { state = JSON.parse(JSON.stringify(DEFAULT_STATE)); }
@@ -684,14 +684,13 @@ function renderVerify() {
 }
 
 function startAutoReveal() {
-    if (revealInterval) return; // Already running
+    if (revealInterval) return;
     revealInterval = setInterval(() => {
         if (state.revealedCount >= state.players.length) {
             clearInterval(revealInterval);
             revealInterval = null;
-            render(); // Render final state to show buttons
+            render();
             
-            // Final Audio Check
             const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
             const allCorrect = state.players.every((p, i) => p.name === sorted[i].name);
             playSfx(allCorrect ? 'win' : 'lose');
@@ -702,21 +701,21 @@ function startAutoReveal() {
         state.revealedCount++;
         saveState();
         playSfx('popup'); 
+        render(); 
         
-        // Auto-Scroll Logic for TV
-        const cardId = 'res-card-' + (state.revealedCount - 1);
-        const card = document.getElementById(cardId);
-        if(card) card.scrollIntoView({behavior: "smooth", block: "center"});
-        
-        render();
-    }, 1500); // 1.5 seconds per reveal
+        // SCROLL AFTER RENDER
+        setTimeout(() => {
+            const card = document.getElementById('res-card-' + (state.revealedCount - 1));
+            if(card) card.scrollIntoView({behavior: "smooth", block: "center"});
+        }, 50);
+
+    }, 1000); // 1.0s Speed
 }
 
 function renderResults() {
     clearInterval(timerInterval);
     const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
     
-    // MVP Logic
     let mvpName = ""; let bestDelta = Infinity;
     const min = state.settings.min; const max = state.settings.max; const total = state.players.length;
     if(total > 1) {
@@ -734,7 +733,6 @@ function renderResults() {
         const isMvp = p.name === mvpName;
         const isRevealed = i < state.revealedCount;
         
-        // Pending Card
         if (!isRevealed) {
             return `
             <div class="item-card pending" id="res-card-${i}">
@@ -746,7 +744,6 @@ function renderResults() {
             </div>`;
         }
 
-        // Revealed Card
         return `
             <div class="item-card just-revealed ${isCorrect ? 'correct' : 'wrong'} ${isMvp ? 'gold' : ''}" id="res-card-${i}">
                 <div>
@@ -760,25 +757,22 @@ function renderResults() {
             </div>`;
     }).join('');
 
-    // Pre-calculate final logic for history/score (runs once when entering results)
     if (!state.finalTime) {
         state.finalTime = Math.floor((Date.now() - state.startTime) / 1000); 
         const allCorrect = state.players.every((p, i) => p.name === sorted[i].name);
         saveHistory(allCorrect); 
-        if(allCorrect) updateScores();
-        else updateScores(); // Update scores anyway (participation/MVP logic if needed)
+        updateScores();
     }
 
     const allRevealed = state.revealedCount >= state.players.length;
     const timeMsg = `<div class="timer-badge" style="background:var(--gold); color:white;">Time: ${formatTime(state.finalTime)}</div>`;
     const headerHtml = `<div style="text-align:center;">${timeMsg}</div><h1>${allRevealed ? 'Results' : 'Revealing...'}</h1>`;
     
-    // Buttons show based on state
+    // Auto-reveal logic handles the flow, so we only show restart buttons when done
     const buttonsHtml = allRevealed ? `
         <button class="btn-primary" onclick="restartSamePlayers()">🔄 Play Again</button>
         <button class="btn-secondary" style="margin-top:10px;" onclick="resetGameData()">New Game</button>
     ` : `
-        <button class="btn-primary" onclick="startAutoReveal()" ${revealInterval ? 'disabled' : ''}>${revealInterval ? '▶️ Revealing...' : '▶️ Start Reveal'}</button>
         <button class="btn-secondary" style="margin-top:10px; opacity:0.5" onclick="state.revealedCount=999; render()">Skip Animation</button>
     `;
 
@@ -931,8 +925,9 @@ function openRoomQr() {
 }
 
 function checkOrder() { 
-    state.revealedCount = 0; // RESET for dramatic reveal
+    state.revealedCount = 0; 
     setState('RESULTS'); 
+    startAutoReveal(); // NEW: Start reveal immediately
     pulse(50); 
 }
 
