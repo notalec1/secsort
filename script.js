@@ -683,7 +683,54 @@ function renderVerify() {
     startTimerTicker();
 }
 
-// NEW: Helper to generate card HTML (used by render and auto-reveal)
+// NEW: Centralized MVP Logic
+function getMvpName(players, sorted) {
+    if(players.length < 2) return "";
+
+    // 1. Identify Correct Players
+    const correctPlayers = players.filter((p, i) => p.name === sorted[i].name);
+
+    // 2. Logic A: Perfect/Correct Players (Who had the tightest squeeze?)
+    if (correctPlayers.length > 0) {
+        let bestName = "";
+        let minDiff = Infinity;
+
+        players.forEach((p, i) => {
+            if (p.name !== sorted[i].name) return; // Skip incorrect players
+
+            // Get absolute difference to neighbors in the SORTED list
+            // (i.e. how close was the next correct number?)
+            let gapPrev = Infinity;
+            let gapNext = Infinity;
+
+            if (i > 0) gapPrev = Math.abs(p.number - sorted[i-1].number);
+            if (i < sorted.length - 1) gapNext = Math.abs(p.number - sorted[i+1].number);
+
+            const difficulty = Math.min(gapPrev, gapNext);
+
+            if (difficulty < minDiff) {
+                minDiff = difficulty;
+                bestName = p.name;
+            }
+        });
+        return bestName;
+    }
+
+    // 3. Logic B: Everyone Wrong (Who was closest to their rank?)
+    let bestName = "";
+    let minRankDiff = Infinity;
+    players.forEach((p, i) => {
+        const sortedIndex = sorted.findIndex(s => s.name === p.name);
+        const diff = Math.abs(i - sortedIndex);
+        if (diff < minRankDiff) { 
+            minRankDiff = diff; 
+            bestName = p.name; 
+        }
+    });
+    return bestName;
+}
+
+// Helper to generate card HTML
 function getResultCardHtml(p, i, sorted, mvpName, isRevealed) {
     if (!isRevealed) {
         return `
@@ -716,28 +763,15 @@ function getResultCardHtml(p, i, sorted, mvpName, isRevealed) {
 function startAutoReveal() {
     if (revealInterval) return;
     
-    // NEW MVP LOGIC: RANK-BASED
     const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
-    let mvpName = ""; let bestDiff = Infinity;
-    
-    if(state.players.length > 1) {
-        state.players.forEach((p, actualIndex) => {
-            const correctIndex = sorted.findIndex(s => s.name === p.name);
-            const diff = Math.abs(actualIndex - correctIndex);
-            if(diff < bestDiff) {
-                bestDiff = diff;
-                mvpName = p.name;
-            }
-        });
-    }
+    const mvpName = getMvpName(state.players, sorted);
 
     revealInterval = setInterval(() => {
         if (state.revealedCount >= state.players.length) {
             clearInterval(revealInterval);
             revealInterval = null;
-            render(); // Final render to show buttons
+            render(); 
             
-            // Final check
             const allCorrect = state.players.every((p, i) => p.name === sorted[i].name);
             playSfx(allCorrect ? 'win' : 'lose');
             if(allCorrect) setTimeout(() => confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } }), 200);
@@ -748,7 +782,6 @@ function startAutoReveal() {
         saveState();
         playSfx('popup'); 
         
-        // --- SURGICAL DOM UPDATE (NO VOMIT) ---
         const cardIndex = state.revealedCount - 1;
         const player = state.players[cardIndex];
         const newHtml = getResultCardHtml(player, cardIndex, sorted, mvpName, true);
@@ -760,33 +793,20 @@ function startAutoReveal() {
             if(newCard) newCard.scrollIntoView({behavior: "smooth", block: "center"});
         }
 
-    }, 1000); // 1.0s Speed
+    }, 1000); 
 }
 
 function renderResults() {
     clearInterval(timerInterval);
     const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
     
-    // NEW MVP LOGIC (RANK BASED)
-    let mvpName = ""; let bestDiff = Infinity;
-    if(state.players.length > 1) {
-        state.players.forEach((p, actualIndex) => {
-            const correctIndex = sorted.findIndex(s => s.name === p.name);
-            const diff = Math.abs(actualIndex - correctIndex);
-            if(diff < bestDiff) {
-                bestDiff = diff;
-                mvpName = p.name;
-            }
-        });
-    }
+    const mvpName = getMvpName(state.players, sorted);
 
-    // Generate List
     const listItems = state.players.map((p, i) => {
         const isRevealed = i < state.revealedCount;
         return getResultCardHtml(p, i, sorted, mvpName, isRevealed);
     }).join('');
 
-    // Pre-calc scores if not done
     if (!state.finalTime) {
         state.finalTime = Math.floor((Date.now() - state.startTime) / 1000); 
         const allCorrect = state.players.every((p, i) => p.name === sorted[i].name);
@@ -798,7 +818,6 @@ function renderResults() {
     const timeMsg = `<div class="timer-badge" style="background:var(--gold); color:white;">Time: ${formatTime(state.finalTime)}</div>`;
     const headerHtml = `<div style="text-align:center;">${timeMsg}</div><h1>${allRevealed ? 'Results' : 'Revealing...'}</h1>`;
     
-    // Hide buttons during reveal
     const buttonsHtml = allRevealed ? `
         <button class="btn-primary" onclick="restartSamePlayers()">🔄 Play Again</button>
         <button class="btn-secondary" style="margin-top:10px;" onclick="resetGameData()">New Game</button>
