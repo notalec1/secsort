@@ -26,7 +26,7 @@ let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let timerInterval = null;
 let revealInterval = null; 
 let godMode = false;
-let movingPlayerIndex = null; // NEW: Track who is being moved
+let movingPlayerIndex = null; 
 let viewMode = sessionStorage.getItem('lineUpViewMode') || null; 
 const app = document.getElementById('app');
 
@@ -60,7 +60,7 @@ function resetViewMode() {
 const DEFAULT_THEME = { 
     blur: 15, scale: 1.0, snow: true, sfx: true,
     color: '#6366f1', font: "'Nunito', sans-serif", speed: 6,
-    controls: 'jump' // NEW: 'jump' or 'arrows'
+    controls: 'jump'
 };
 let theme = DEFAULT_THEME;
 try {
@@ -90,8 +90,8 @@ function applyTheme() {
     root.setProperty('--bg-speed', theme.speed + 's');
     root.setProperty('--font-type', theme.font);
 
-    // Sync Inputs
-    const ids = ['blurInput','scaleInput','snowInput','sfxInput','colorInput','fontInput','speedInput', 'controlInput'];
+    // Sync Inputs (ADDED controlInput here)
+    const ids = ['blurInput','scaleInput','snowInput','sfxInput','colorInput','fontInput','speedInput','controlInput'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if(!el) return;
@@ -109,7 +109,7 @@ function updateTheme(key, val) {
     theme[key] = val;
     localStorage.setItem('lineUpTheme', JSON.stringify(theme));
     applyTheme();
-    render(); // Re-render to update controls instantly
+    render();
 }
 
 // --- SNOW FX ---
