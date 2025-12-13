@@ -116,7 +116,10 @@ body.is-tv-mode .split-container { flex-direction: row; align-items: stretch; }
     border: 1px solid var(--border);
     display: flex; flex-direction: column;
 }
-.game-status-panel { flex: 1.5; }
+
+/* MODIFIED: game-status-panel now takes full flex height */
+.game-status-panel { flex: 1; }
+/* REMOVED: .leaderboard-panel styles are technically unused now in main view, but kept for modal safety */
 .leaderboard-panel { flex: 1; border: 2.5px solid var(--gold); background: rgba(245, 158, 11, 0.1); }
 
 .game-status-panel h3, 
