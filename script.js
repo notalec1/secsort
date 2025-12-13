@@ -542,7 +542,6 @@ function renderSetup() {
             ${viewMode === 'tv' ? `
                 <div class="right-panel">
                     <div class="game-status-panel"><h3>Current Roster</h3>${rosterHtml}</div>
-                    <div class="leaderboard-panel"><h3>🏆 Total Scores</h3>${getLeaderboardHtml()}</div>
                 </div>` 
             : `<div style="margin-top:10px">${rosterHtml}</div>`}
         </div>
@@ -596,7 +595,6 @@ function renderDistribute() {
             <div class="left-panel">${controlsHtml}</div>
             <div class="right-panel">
                 <div class="game-status-panel"><h3>Links</h3>${listHtml}</div>
-                <div class="leaderboard-panel"><h3>🏆 Total Scores</h3>${getLeaderboardHtml()}</div>
             </div>
         </div>`;
     } else {
@@ -711,7 +709,6 @@ function renderVerify() {
             <div class="left-panel">${controlsHtml}</div>
             <div class="right-panel">
                 <div class="game-status-panel"><h3>Current Order</h3>${listHtml}</div>
-                <div class="leaderboard-panel"><h3>🏆 Total Scores</h3>${getLeaderboardHtml()}</div>
             </div>
         </div>`;
     } else {
@@ -842,8 +839,7 @@ function renderResults() {
     `;
 
     const listHtml = `<div class="list-wrap">${listItems}</div>`;
-    const leaderboardHtml = `<div style="margin-top:20px; padding-top:20px; border-top:2px solid var(--border);">
-        <h3>🏆 Total Scores</h3>${getLeaderboardHtml()}</div>`;
+    // LEADERBOARD HTML REMOVED HERE
 
     const switchBtn = `<button class="top-left-btn" onclick="resetViewMode()" title="Switch View Mode">↔️</button>`;
 
@@ -854,11 +850,10 @@ function renderResults() {
                 <div class="left-panel" style="justify-content:center;">${headerHtml}<div style="margin-top:30px">${buttonsHtml}</div></div>
                 <div class="right-panel">
                     <div class="game-status-panel"><h3>Results</h3>${listHtml}</div>
-                    <div class="leaderboard-panel"><h3>🏆 Total Scores</h3>${getLeaderboardHtml()}</div>
                 </div>
             </div>`;
     } else {
-        app.innerHTML = `${switchBtn}${headerHtml}${listHtml}${leaderboardHtml}${buttonsHtml}`;
+        app.innerHTML = `${switchBtn}${headerHtml}${listHtml}${buttonsHtml}`;
     }
 }
 
