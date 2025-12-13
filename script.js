@@ -55,7 +55,7 @@ function resetViewMode() {
     render();
 }
 
-// --- THEME MANAGER & SFX (V2) ---
+// --- THEME MANAGER & SFX ---
 const DEFAULT_THEME = { 
     blur: 15, scale: 1.0, snow: true, sfx: true,
     color: '#6366f1', font: "'Nunito', sans-serif", speed: 6
@@ -683,39 +683,41 @@ function renderVerify() {
     startTimerTicker();
 }
 
-function startAutoReveal() {
-    if (revealInterval) return;
-    revealInterval = setInterval(() => {
-        if (state.revealedCount >= state.players.length) {
-            clearInterval(revealInterval);
-            revealInterval = null;
-            render();
-            
-            const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
-            const allCorrect = state.players.every((p, i) => p.name === sorted[i].name);
-            playSfx(allCorrect ? 'win' : 'lose');
-            if(allCorrect) setTimeout(() => confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } }), 200);
-            return;
-        }
-        
-        state.revealedCount++;
-        saveState();
-        playSfx('popup'); 
-        render(); 
-        
-        // SCROLL AFTER RENDER
-        setTimeout(() => {
-            const card = document.getElementById('res-card-' + (state.revealedCount - 1));
-            if(card) card.scrollIntoView({behavior: "smooth", block: "center"});
-        }, 50);
+// NEW: Helper to generate card HTML (used by render and auto-reveal)
+function getResultCardHtml(p, i, sorted, mvpName, isRevealed) {
+    if (!isRevealed) {
+        return `
+        <div class="item-card pending" id="res-card-${i}">
+            <div style="display:flex; align-items:center;">
+                <div class="rank-badge" style="background:var(--text-sub); opacity:0.5;">${i+1}</div>
+                <span style="font-weight:700; opacity:0.5;">Hidden</span>
+            </div>
+            <div style="opacity:0.5;">⏳</div>
+        </div>`;
+    }
 
-    }, 1000); // 1.0s Speed
+    const isCorrect = p.name === sorted[i].name; 
+    const realRank = sorted.findIndex(x => x.name === p.name) + 1; 
+    const isMvp = p.name === mvpName;
+
+    return `
+        <div class="item-card just-revealed ${isCorrect ? 'correct' : 'wrong'} ${isMvp ? 'gold' : ''}" id="res-card-${i}">
+            <div>
+                <div style="display:flex; align-items:center;">
+                    <div class="rank-badge" style="background:${isCorrect ? 'var(--success)' : 'var(--danger)'}; color:white;">${i+1}</div>
+                    <strong>${p.name}</strong>${isMvp ? '<span style="margin-left:8px; font-size:0.8rem; background:var(--gold); color:white; padding:2px 6px; border-radius:4px;">⭐ MVP</span>' : ''}
+                </div>
+                <div style="font-size:0.85rem; margin-top:6px; margin-left:40px; opacity:0.8;">Number: <strong>${p.number}</strong>${!isCorrect ? `(Should be #${realRank})` : ''}</div>
+            </div>
+            <div style="font-size:1.5rem;">${isCorrect ? `✅<br><span style="font-size:0.6rem; font-weight:bold; color:var(--success)">+10pts</span>` : '❌'}</div>
+        </div>`;
 }
 
-function renderResults() {
-    clearInterval(timerInterval);
-    const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
+function startAutoReveal() {
+    if (revealInterval) return;
     
+    // Calculate logic once
+    const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
     let mvpName = ""; let bestDelta = Infinity;
     const min = state.settings.min; const max = state.settings.max; const total = state.players.length;
     if(total > 1) {
@@ -727,36 +729,61 @@ function renderResults() {
         });
     }
 
-    const listItems = state.players.map((p, i) => {
-        const isCorrect = p.name === sorted[i].name; 
-        const realRank = sorted.findIndex(x => x.name === p.name) + 1; 
-        const isMvp = p.name === mvpName;
-        const isRevealed = i < state.revealedCount;
+    revealInterval = setInterval(() => {
+        if (state.revealedCount >= state.players.length) {
+            clearInterval(revealInterval);
+            revealInterval = null;
+            render(); // Final render to show buttons
+            
+            // Final check
+            const allCorrect = state.players.every((p, i) => p.name === sorted[i].name);
+            playSfx(allCorrect ? 'win' : 'lose');
+            if(allCorrect) setTimeout(() => confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } }), 200);
+            return;
+        }
         
-        if (!isRevealed) {
-            return `
-            <div class="item-card pending" id="res-card-${i}">
-                <div style="display:flex; align-items:center;">
-                    <div class="rank-badge" style="background:var(--text-sub); opacity:0.5;">${i+1}</div>
-                    <span style="font-weight:700; opacity:0.5;">Hidden</span>
-                </div>
-                <div style="opacity:0.5;">⏳</div>
-            </div>`;
+        state.revealedCount++;
+        saveState();
+        playSfx('popup'); 
+        
+        // --- SURGICAL DOM UPDATE (NO VOMIT) ---
+        const cardIndex = state.revealedCount - 1;
+        const player = state.players[cardIndex];
+        const newHtml = getResultCardHtml(player, cardIndex, sorted, mvpName, true);
+        
+        const cardEl = document.getElementById(`res-card-${cardIndex}`);
+        if(cardEl) {
+            cardEl.outerHTML = newHtml;
+            const newCard = document.getElementById(`res-card-${cardIndex}`);
+            if(newCard) newCard.scrollIntoView({behavior: "smooth", block: "center"});
         }
 
-        return `
-            <div class="item-card just-revealed ${isCorrect ? 'correct' : 'wrong'} ${isMvp ? 'gold' : ''}" id="res-card-${i}">
-                <div>
-                    <div style="display:flex; align-items:center;">
-                        <div class="rank-badge" style="background:${isCorrect ? 'var(--success)' : 'var(--danger)'}; color:white;">${i+1}</div>
-                        <strong>${p.name}</strong>${isMvp ? '<span style="margin-left:8px; font-size:0.8rem; background:var(--gold); color:white; padding:2px 6px; border-radius:4px;">⭐ MVP</span>' : ''}
-                    </div>
-                    <div style="font-size:0.85rem; margin-top:6px; margin-left:40px; opacity:0.8;">Number: <strong>${p.number}</strong>${!isCorrect ? `(Should be #${realRank})` : ''}</div>
-                </div>
-                <div style="font-size:1.5rem;">${isCorrect ? `✅<br><span style="font-size:0.6rem; font-weight:bold; color:var(--success)">+10pts</span>` : '❌'}</div>
-            </div>`;
+    }, 1000); // 1.0s Speed
+}
+
+function renderResults() {
+    clearInterval(timerInterval);
+    const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
+    
+    // MVP Logic
+    let mvpName = ""; let bestDelta = Infinity;
+    const min = state.settings.min; const max = state.settings.max; const total = state.players.length;
+    if(total > 1) {
+        state.players.forEach((p, actualIndex) => {
+            const idealPercent = (p.number - min) / (max - min); 
+            const idealIndex = idealPercent * (total - 1);
+            const delta = Math.abs(actualIndex - idealIndex);
+            if(delta < bestDelta) { bestDelta = delta; mvpName = p.name; }
+        });
+    }
+
+    // Generate List
+    const listItems = state.players.map((p, i) => {
+        const isRevealed = i < state.revealedCount;
+        return getResultCardHtml(p, i, sorted, mvpName, isRevealed);
     }).join('');
 
+    // Pre-calc scores if not done
     if (!state.finalTime) {
         state.finalTime = Math.floor((Date.now() - state.startTime) / 1000); 
         const allCorrect = state.players.every((p, i) => p.name === sorted[i].name);
@@ -768,7 +795,7 @@ function renderResults() {
     const timeMsg = `<div class="timer-badge" style="background:var(--gold); color:white;">Time: ${formatTime(state.finalTime)}</div>`;
     const headerHtml = `<div style="text-align:center;">${timeMsg}</div><h1>${allRevealed ? 'Results' : 'Revealing...'}</h1>`;
     
-    // Auto-reveal logic handles the flow, so we only show restart buttons when done
+    // Hide buttons during reveal
     const buttonsHtml = allRevealed ? `
         <button class="btn-primary" onclick="restartSamePlayers()">🔄 Play Again</button>
         <button class="btn-secondary" style="margin-top:10px;" onclick="resetGameData()">New Game</button>
