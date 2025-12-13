@@ -707,7 +707,7 @@ function getResultCardHtml(p, i, sorted, mvpName, isRevealed) {
                     <div class="rank-badge" style="background:${isCorrect ? 'var(--success)' : 'var(--danger)'}; color:white;">${i+1}</div>
                     <strong>${p.name}</strong>${isMvp ? '<span style="margin-left:8px; font-size:0.8rem; background:var(--gold); color:white; padding:2px 6px; border-radius:4px;">⭐ MVP</span>' : ''}
                 </div>
-                <div style="font-size:0.85rem; margin-top:6px; margin-left:40px; opacity:0.8;">Number: <strong>${p.number}</strong>${!isCorrect ? `(Should be #${realRank})` : ''}</div>
+                <div style="font-size:0.85rem; margin-top:6px; margin-left:40px; opacity:0.8;">Number: <strong>${p.number}</strong>${!isCorrect ? ` (Should be #${realRank})` : ''}</div>
             </div>
             <div style="font-size:1.5rem;">${isCorrect ? `✅<br><span style="font-size:0.6rem; font-weight:bold; color:var(--success)">+10pts</span>` : '❌'}</div>
         </div>`;
