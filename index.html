@@ -126,6 +126,12 @@
                 <small style="opacity:0.6; display:block; text-align:right;">Fast &larr; &rarr; Slow</small>
 
                 <div class="divider"></div>
+
+                  <!-- NEW: SFX Toggle -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <label class="label" style="margin:0;">Sound Effects</label>
+                    <input type="checkbox" id="sfxInput" checked onchange="updateTheme('sfx', this.checked)" style="width:24px; height:24px; accent-color:var(--primary);">
+                </div>
                 
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label class="label" style="margin:0;">Snow Effect</label>
