@@ -68,7 +68,6 @@ function resetViewMode() {
 // --- MUSIC SYSTEM ---
 let currentTrackFile = null;
 
-// Helper to generate the floating button HTML
 function getMusicBtn() {
     return `<button class="btn-secondary btn-icon" 
         style="position:absolute; top:15px; right:15px; z-index:50; width:44px; height:44px; border-radius:50%; box-shadow:0 4px 12px rgba(0,0,0,0.15);" 
@@ -103,46 +102,23 @@ function openMusicModal() {
 
 function playMusic(filename) {
     const audio = document.getElementById('bgAudio');
-    
-    // Find track info for Toast
     const trackInfo = MUSIC_TRACKS.find(t => t.file === filename);
     const displayName = trackInfo ? trackInfo.title : filename;
 
-    // 1. Prevent restarting if already playing this song
-    if (currentTrackFile === filename && !audio.paused) {
-        return; 
-    }
+    if (currentTrackFile === filename && !audio.paused) return;
     
-    // 2. Set the source
     audio.src = `music/${filename}`;
     audio.volume = 0.5;
     
-    // 3. Play with "False Alarm" check
     const playPromise = audio.play();
-
     if (playPromise !== undefined) {
         playPromise.then(() => {
-            // SUCCESS: Normal load
             currentTrackFile = filename;
             showToast("Playing: " + displayName);
             openMusicModal(); 
         }).catch(error => {
-            console.log("Playback Status:", error);
-
-            // FALSE ALARM CHECK: 
-            // If the audio is actually playing (not paused), ignore the error!
-            if (!audio.paused) {
-                currentTrackFile = filename;
-                openMusicModal();
-                return; 
-            }
-
-            // IGNORE INTERRUPTIONS:
-            // If the user clicked fast (AbortError), don't show an error.
+            if (!audio.paused) { currentTrackFile = filename; openMusicModal(); return; }
             if (error.name === 'AbortError') return;
-
-            // REAL ERROR:
-            // Only show this if it really failed
             showToast("Error: File not found");
         });
     }
@@ -153,9 +129,8 @@ function stopMusic() {
     audio.pause();
     audio.currentTime = 0;
     currentTrackFile = null;
-    openMusicModal(); // Re-render
+    openMusicModal();
 }
-
 
 // --- SNOW FX ---
 function initSnow() {
@@ -215,16 +190,12 @@ function updateScores() {
     const sorted = [...state.players].sort((a, b) => state.settings.order === 'asc' ? a.number - b.number : b.number - a.number);
     const scores = getLeaderboard();
     let changed = false;
-    
     state.players.forEach((p, i) => {
         if (p.name === sorted[i].name) {
             scores[p.name] = (scores[p.name] || 0) + 10;
             changed = true;
-        } else {
-            scores[p.name] = scores[p.name] || 0;
-        }
+        } else { scores[p.name] = scores[p.name] || 0; }
     });
-
     if(changed) localStorage.setItem('lineUpLeaderboard', JSON.stringify(scores));
     return scores;
 }
@@ -264,11 +235,7 @@ function importData(event) {
             if (data.state) localStorage.setItem('lineUpState', data.state);
             if (data.leaderboard) localStorage.setItem('lineUpLeaderboard', data.leaderboard);
             showToast("Data Restored!");
-            
-            // RELOAD REPLACEMENT: Manually reload state without page refresh
-            loadState();
-            render();
-            closeModal('dataModal');
+            loadState(); render(); closeModal('dataModal');
         } catch(err) { showToast("Invalid File"); }
     };
     reader.readAsText(file);
@@ -277,12 +244,8 @@ function importData(event) {
 function wipeData() {
     if(confirm("Are you sure? This deletes ALL history, groups, and settings.")) {
         localStorage.clear(); 
-        
-        // RELOAD REPLACEMENT: Reset state manually
         state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-        render();
-        closeModal('dataModal');
-        showToast("Factory Reset Complete");
+        render(); closeModal('dataModal'); showToast("Factory Reset Complete");
     }
 }
 
@@ -291,10 +254,8 @@ function addPlayer(optionalName) {
     const input = document.getElementById('nameInput');
     const name = optionalName || input.value.trim();
     if (!name) return;
-    // Prevent exact duplicates
     const exists = state.players.some(p => p.name.toLowerCase() === name.toLowerCase());
     if(exists) return showToast("Already added!");
-    
     state.players.push({ name, number: 0 });
     if(input) input.value = '';
     setState('SETUP');
@@ -410,6 +371,7 @@ function saveHistory(win) {
     log.unshift({
         date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         players: state.players.length,
+        roster: state.players.map(p => p.name), 
         time: formatTime(state.finalTime),
         win: win
     });
@@ -421,11 +383,21 @@ function renderHistoryList() {
     const log = JSON.parse(localStorage.getItem('lineUpHistory')) || [];
     const el = document.getElementById('historyList');
     if(log.length === 0) { el.innerHTML = "<p>No games played yet.</p>"; return; }
-    el.innerHTML = log.map(g => `
-        <div class="item-card" style="margin-bottom:8px; ${g.win ? 'border-color:var(--success)' : ''}">
-            <div><div style="font-size:0.8rem; opacity:0.7">${g.date}</div><strong>${g.players} Players</strong></div>
-            <div style="text-align:right;"><div style="font-weight:bold;">${g.time}</div><div>${g.win ? '✅' : '❌'}</div></div>
-        </div>`).join('');
+    el.innerHTML = log.map((g, index) => {
+        const names = g.roster ? g.roster.join(', ') : 'No roster data';
+        return `
+        <div class="item-card" 
+             style="margin-bottom:8px; display:block; cursor:pointer; ${g.win ? 'border-color:var(--success)' : ''}" 
+             onclick="const d = document.getElementById('hist-details-${index}'); d.style.display = d.style.display === 'none' ? 'block' : 'none'; pulse();">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-size:0.8rem; opacity:0.7">${g.date}</div><strong>${g.players} Players</strong></div>
+                <div style="text-align:right;"><div style="font-weight:bold;">${g.time}</div><div>${g.win ? '✅' : '❌'}</div></div>
+            </div>
+            <div id="hist-details-${index}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); font-size:0.85rem; opacity:0.8;">
+                <strong>Roster:</strong><br>${names}
+            </div>
+        </div>`;
+    }).join('');
 }
 
 // --- MISC UTILS ---
@@ -453,7 +425,7 @@ function openModal(id) {
     if(id==='leaderboardModal') {
         document.getElementById('mobileLeaderboardList').innerHTML = getLeaderboardHtml();
     }
-    if(id==='musicModal') openMusicModal(); // Ensure music list renders
+    if(id==='musicModal') openMusicModal();
     pulse(); 
 }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); pulse(); }
@@ -466,10 +438,8 @@ function render() {
     if (params.get('p')) { renderPlayerView(params.get('p')); return; }
     if (params.get('room')) { renderRoomView(params.get('room')); return; }
 
-    // Mode Selection
     if (!viewMode) { renderModeSelection(); return; }
 
-    // Host Mode
     if(state.step === 'SETUP') renderSetup();
     else if(state.step === 'DISTRIBUTE') renderDistribute();
     else if(state.step === 'PASS_PLAY') renderPassPlay();
@@ -533,6 +503,7 @@ function renderSetup() {
             <div style="display:flex; gap:5px;">
                 <button class="btn-secondary btn-sm" onclick="openModal('presetsModal')">💾</button>
                 <button class="btn-secondary btn-sm" onclick="openModal('leaderboardModal')">🏆</button>
+                <button class="btn-secondary btn-sm" onclick="openModal('historyModal')">📜</button>
                 <button class="btn-secondary btn-sm" onclick="openModal('dataModal')">⚙️</button>
                 <button class="btn-secondary btn-sm" onclick="savePreset()">+Save</button>
             </div>
@@ -729,7 +700,6 @@ function renderResults() {
     let allCorrect = true; 
     const switchBtn = `<button class="top-left-btn" onclick="resetViewMode()" title="Switch View Mode">↔️</button>`;
     
-    // MVP Logic
     let mvpName = ""; let bestDelta = Infinity;
     const min = state.settings.min; const max = state.settings.max; const total = state.players.length;
     if(total > 1) {
@@ -834,11 +804,9 @@ function renderRoomView(encodedData) {
     `;
 }
 
-// RELOAD REPLACEMENT: Use History API instead of reload
 function claimPlayer(name, val, min, max, order) {
     const payload = { n: name, v: val, min: min, max: max, o: order };
     const encoded = btoa(JSON.stringify(payload));
-    
     const newUrl = `${window.location.pathname}?p=${encoded}`;
     window.history.pushState({path: newUrl}, '', newUrl);
     render();
@@ -886,8 +854,6 @@ function openRoomQr() {
     openModal('roomQrModal');
     const c = document.getElementById('roomQrDisplay');
     c.innerHTML = '';
-    
-    // Construct Room Payload (just names/numbers to keep URL short)
     const roomData = {
         players: state.players.map(p => ({n: p.name, v: p.number})),
         min: state.settings.min, 
@@ -896,7 +862,6 @@ function openRoomQr() {
     };
     const baseUrl = window.location.href.split('?')[0];
     const url = `${baseUrl}?room=${btoa(JSON.stringify(roomData))}`;
-    
     new QRCode(c, { text: url, width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L });
 }
 
