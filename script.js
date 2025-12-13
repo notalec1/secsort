@@ -65,16 +65,39 @@ function resetViewMode() {
     render();
 }
 
-// --- THEME MANAGER ---
+// --- THEME MANAGER (UPDATED) ---
 const DEFAULT_THEME = { blur: 15, scale: 1.0, snow: true };
-let theme = JSON.parse(localStorage.getItem('lineUpTheme')) || DEFAULT_THEME;
+let theme = DEFAULT_THEME;
+
+// Load safely
+try {
+    const savedTheme = localStorage.getItem('lineUpTheme');
+    if (savedTheme) theme = JSON.parse(savedTheme);
+} catch (e) { console.error("Theme Load Error", e); }
 
 function applyTheme() {
-    // Apply CSS Variables
+    // 1. Force update CSS variables
     document.documentElement.style.setProperty('--glass-blur', theme.blur + 'px');
     document.documentElement.style.setProperty('--font-scale', theme.scale);
     
-    // Handle Inputs if modal is open
+    // 2. FORCE DIRECT STYLES (Fixes the "sliders do nothing" issue)
+    // Font Scaling
+    document.documentElement.style.fontSize = `calc(16px * ${theme.scale})`;
+    
+    // Glass Blur - Apply to main card
+    const card = document.querySelector('.app-card');
+    if(card) {
+        card.style.backdropFilter = `blur(${theme.blur}px)`;
+        card.style.webkitBackdropFilter = `blur(${theme.blur}px)`;
+    }
+    
+    // Glass Blur - Apply to modals
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+        m.style.backdropFilter = `blur(${theme.blur}px)`;
+        m.style.webkitBackdropFilter = `blur(${theme.blur}px)`;
+    });
+
+    // 3. Update Input Positions (Sync UI)
     const blurIn = document.getElementById('blurInput');
     const scaleIn = document.getElementById('scaleInput');
     const snowIn = document.getElementById('snowInput');
@@ -82,19 +105,20 @@ function applyTheme() {
     if(scaleIn) scaleIn.value = theme.scale;
     if(snowIn) snowIn.checked = theme.snow;
     
-    // Handle Snow
+    // 4. Handle Snow
     const canvas = document.getElementById('snowCanvas');
     if(canvas) canvas.style.display = theme.snow ? 'block' : 'none';
 }
 
 function updateTheme(key, val) {
+    // Convert slider strings to proper types
+    if(key === 'blur') val = parseInt(val);
+    if(key === 'scale') val = parseFloat(val);
+    
     theme[key] = val;
     localStorage.setItem('lineUpTheme', JSON.stringify(theme));
     applyTheme();
 }
-
-// Call this immediately on load
-applyTheme();
 
 // --- MUSIC SYSTEM ---
 let currentTrackFile = null;
@@ -457,6 +481,8 @@ function openModal(id) {
         document.getElementById('mobileLeaderboardList').innerHTML = getLeaderboardHtml();
     }
     if(id==='musicModal') openMusicModal();
+    // Theme inputs are handled by applyTheme called in renderSetup, but we can double check
+    if(id==='themeModal') applyTheme();
     pulse(); 
 }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); pulse(); }
@@ -476,6 +502,9 @@ function render() {
     else if(state.step === 'PASS_PLAY') renderPassPlay();
     else if(state.step === 'VERIFY') renderVerify();
     else if(state.step === 'RESULTS') renderResults();
+    
+    // Ensure theme is re-applied on every render (catches dynamic elements)
+    applyTheme();
 }
 
 // --- COMPONENTS ---
